@@ -1,0 +1,32 @@
+{
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.0.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.5",
+        "husky": "^9.1.7",
+        "prettier": "^3.8.1"
+    },
+    "name": "homework-1",
+    "version": "1.0.0",
+    "description": "",
+    "main": "homework_1.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "prepare": "husky",
+        "start": "node homework_1.js",
+        "dev": "node --watch homework_1.js",
+        "build": "npm run lint && npm run prettier:check",
+        "lint": "eslint .",
+        "prettier:check": "prettier --check .",
+        "prettier": "prettier --write ."
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "dotenv": "^17.3.1",
+        "globals": "^17.3.0",
+        "winston": "^3.19.0"
+    }
+}
