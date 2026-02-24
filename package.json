@@ -1,4 +1,5 @@
 {
+    "type": "module",
     "devDependencies": {
         "@eslint/js": "^10.0.1",
         "eslint": "^10.0.0",
@@ -10,12 +11,13 @@
     "name": "homework-1",
     "version": "1.0.0",
     "description": "",
-    "main": "homework_1.js",
+    "main": "app.js",
     "scripts": {
+        "jwt-secret": "node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\"",
         "test": "echo \"Error: no test specified\" && exit 1",
         "prepare": "husky",
-        "start": "node homework_1.js",
-        "dev": "node --watch homework_1.js",
+        "start": "node app.js",
+        "dev": "node --watch app.js",
         "build": "npm run lint && npm run prettier:check",
         "lint": "eslint .",
         "prettier:check": "prettier --check .",
@@ -25,8 +27,15 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "bcrypt": "^6.0.0",
+        "crypto": "^1.0.1",
         "dotenv": "^17.3.1",
+        "events": "^3.3.0",
+        "express": "^5.2.1",
+        "fs": "^0.0.1-security",
         "globals": "^17.3.0",
+        "jsonwebtoken": "^9.0.3",
+        "nodemailer": "^8.0.1",
         "winston": "^3.19.0"
     }
 }

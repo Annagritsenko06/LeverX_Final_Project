@@ -6,3 +6,5 @@ package-lock.json
 
 .prettierrc
 eslint.config.js
+
+README.md
