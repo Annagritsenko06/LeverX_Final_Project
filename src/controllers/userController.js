@@ -1,5 +1,5 @@
 import * as userService from '../services/userService.js';
-import { usersUpdate } from '../services/emailService.js';
+import { notification } from '../services/emailService.js';
 import {
     STATUS_OK,
     STATUS_CREATED,
@@ -7,22 +7,23 @@ import {
     STATUS_CONFLICT,
     STATUS_SERVER_ERROR,
     STATUS_UNAUTHORIZED,
-} from '../config/constants.js';
+} from '../common/constants.js';
+import { USERMESSAGES, MESSAGES } from '../common/messages.js';
 
 export async function register(req, res) {
     try {
         const result = await userService.registerUser(req.body);
         res.status(STATUS_CREATED).json({
             success: true,
-            message: 'User successfully registered',
+            message: USERMESSAGES.USER_REGISTERED,
             userName: result.Name,
         });
     } catch (error) {
-        if (error.message === 'User already exists') {
+        if (error.message === USERMESSAGES.USER_ALREADY_EXISTS) {
             res.status(STATUS_CONFLICT).json({ error: error.message });
         } else {
             res.status(STATUS_SERVER_ERROR).json({
-                error: 'Internal Server Error',
+                error: MESSAGES.INTERNAL_SERVER_ERROR,
             });
         }
     }
@@ -38,13 +39,13 @@ export async function login(req, res) {
             userEmail: result.userEmail,
         });
     } catch (error) {
-        if (error.message === 'User not found') {
+        if (error.message === USERMESSAGES.USER_NOT_FOUND) {
             res.status(STATUS_NOT_FOUND).json({ error: error.message });
-        } else if (error.message === 'Wrong password') {
+        } else if (error.message === USERMESSAGES.WRONG_PASSWORD) {
             res.status(STATUS_UNAUTHORIZED).json({ error: error.message });
         } else {
             res.status(STATUS_SERVER_ERROR).json({
-                error: 'Error reading file',
+                error: MESSAGES.ERROR_READING_FILE,
             });
         }
     }
@@ -55,7 +56,7 @@ export async function updateProfile(req, res) {
         const { Name, Lastname } = req.body;
 
         if (!Name || !Lastname) {
-            return res.status(STATUS_CONFLICT).send('Entered data is empty');
+            return res.status(STATUS_CONFLICT).send(MESSAGES.DATA_IS_EMPTY);
         }
 
         const result = await userService.updateUserProfile(
@@ -64,20 +65,20 @@ export async function updateProfile(req, res) {
             Lastname
         );
 
-        usersUpdate.emit('profileUpdated', req.user.Email, Name, Lastname);
+        notification.emit('profileUpdated', req.user.Email, Name, Lastname);
 
         res.status(STATUS_OK).json({
             success: true,
-            message: 'User successfully updated',
+            message: USERMESSAGES.USER_UPDATED,
             NewuserName: result.name,
             NewLastname: result.lastname,
         });
     } catch (error) {
-        if (error.message === 'User not found') {
+        if (error.message === USERMESSAGES.USER_NOT_FOUND) {
             res.status(STATUS_NOT_FOUND).json({ error: error.message });
         } else {
             res.status(STATUS_SERVER_ERROR).json({
-                error: 'Internal Server Error',
+                error: MESSAGES.INTERNAL_SERVER_ERROR,
             });
         }
     }

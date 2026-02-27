@@ -4,7 +4,8 @@ import {
     STATUS_CREATED,
     STATUS_NOT_FOUND,
     STATUS_SERVER_ERROR,
-} from '../config/constants.js';
+} from '../common/constants.js';
+import { POSTSMESSAGES, MESSAGES } from '../common/messages.js';
 
 export async function createPost(req, res) {
     try {
@@ -12,13 +13,13 @@ export async function createPost(req, res) {
 
         res.status(STATUS_CREATED).json({
             success: true,
-            message: 'Post successfully created',
+            message: POSTSMESSAGES.POST_CREATED,
             Title: result.Title,
             Created_data: result.created_date,
         });
     } catch (error) {
         res.status(STATUS_SERVER_ERROR).json({
-            error: 'Internal Server Error',
+            error: MESSAGES.INTERNAL_SERVER_ERROR,
         });
     }
 }
@@ -34,7 +35,7 @@ export async function getUserPosts(req, res) {
         });
     } catch (error) {
         res.status(STATUS_SERVER_ERROR).json({
-            error: 'Internal Server Error',
+            error: MESSAGES.INTERNAL_SERVER_ERROR,
         });
     }
 }
@@ -50,17 +51,16 @@ export async function updatePost(req, res) {
 
         res.status(STATUS_OK).json({
             success: true,
-            message: 'Post successfully updated',
+            message: POSTSMESSAGES.POST_UPDATED,
             Title: result.Title,
             Created_data: result.updated_date,
         });
     } catch (error) {
-        if (error.message === 'Post not found') {
+        if (error.message === POSTSMESSAGES.POST_NOT_FOUND) {
             res.status(STATUS_NOT_FOUND).json({ error: error.message });
         } else {
-            logger.error('Update post error:', error);
             res.status(STATUS_SERVER_ERROR).json({
-                error: 'Internal Server Error',
+                error: MESSAGES.INTERNAL_SERVER_ERROR,
             });
         }
     }
@@ -73,15 +73,14 @@ export async function deletePost(req, res) {
 
         res.status(STATUS_OK).json({
             success: true,
-            message: 'Post successfully deleted',
+            message: POSTSMESSAGES.POST_DELETED,
         });
     } catch (error) {
-        if (error.message === 'Post not found') {
+        if (error.message === POSTSMESSAGES.POST_NOT_FOUND) {
             res.status(STATUS_NOT_FOUND).json({ error: error.message });
         } else {
-            logger.error('Delete post error:', error);
             res.status(STATUS_SERVER_ERROR).json({
-                error: 'Internal Server Error',
+                error: MESSAGES.INTERNAL_SERVER_ERROR,
             });
         }
     }

@@ -5,6 +5,3 @@ export const STATUS_CONFLICT = 409;
 export const STATUS_SERVER_ERROR = 500;
 export const STATUS_UNAUTHORIZED = 401;
 export const STATUS_FORBIDDEN = 403;
-export const SALT_ROUNDS = 8;
-export const DATA_FILE = 'Users_data.json';
-export const POSTS_FILE = 'Users_posts.json';

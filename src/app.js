@@ -1,10 +1,11 @@
 import express from 'express';
 import 'dotenv/config';
-import packageJS from './package.json' with { type: 'json' };
+import packageJS from '../package.json' with { type: 'json' };
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
-import { logger } from './config/logger.js';
-import { STATUS_OK, STATUS_NOT_FOUND } from './config/constants.js';
+import { logger } from './common/logger.js';
+import { STATUS_OK, STATUS_NOT_FOUND } from './common/constants.js';
+import { MESSAGES } from './common/messages.js';
 
 const app = express();
 
@@ -31,7 +32,9 @@ app.use('/posts', postRoutes);
 app.use((req, res) => {
     res.status(STATUS_NOT_FOUND)
         .type('text/plain')
-        .send('Nothing found on your search!!!');
+        .send(MESSAGES.NOTHING_FOUND);
 });
 
-export default app;
+app.listen(process.env.PORT, () => {
+    console.log(`Server is running on port ${process.env.PORT}`);
+});

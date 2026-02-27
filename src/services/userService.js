@@ -1,21 +1,25 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
-import { readFile, writeFile } from '../utils/fileHelpers.js';
-import { DATA_FILE, SALT_ROUNDS } from '../config/constants.js';
+import { readFile, writeFile } from '../common/fileHelpers.js';
+import { USERMESSAGES } from '../common/messages.js';
 
 export async function registerUser(userData) {
     const { Name, Lastname, Email, Password } = userData;
 
-    const users = await readFile(DATA_FILE);
+    const users = await readFile(process.env.DATA_FILE);
     const existingUser = users.find((u) => u.Email === Email);
 
     if (existingUser) {
-        throw new Error('User already exists');
+        throw new Error(USERMESSAGES.USER_ALREADY_EXISTS);
     }
 
     const userId = randomUUID();
-    const passwordHash = await bcrypt.hash(Password, SALT_ROUNDS);
+    const saltRounds =
+        typeof process.env.SALT_ROUNDS === 'string'
+            ? Number(process.env.SALT_ROUNDS)
+            : process.env.SALT_ROUNDS;
+    const passwordHash = await bcrypt.hash(Password, saltRounds || 10);
 
     const newUser = {
         Id: userId,
@@ -26,23 +30,23 @@ export async function registerUser(userData) {
     };
 
     users.push(newUser);
-    await writeFile(DATA_FILE, users);
+    await writeFile(process.env.DATA_FILE, users);
 
     return { userId, Name };
 }
 
 export async function loginUser(email, password) {
-    const users = await readFile(DATA_FILE);
+    const users = await readFile(process.env.DATA_FILE);
     const user = users.find((u) => u.Email === email);
 
     if (!user) {
-        throw new Error('User not found');
+        throw new Error(USERMESSAGES.USER_NOT_FOUND);
     }
 
     const isValid = await bcrypt.compare(password, user.Password);
 
     if (!isValid) {
-        throw new Error('Wrong password');
+        throw new Error(USERMESSAGES.WRONG_PASSWORD);
     }
 
     const payload = {
@@ -60,17 +64,17 @@ export async function loginUser(email, password) {
 }
 
 export async function updateUserProfile(email, name, lastname) {
-    const users = await readFile(DATA_FILE);
+    const users = await readFile(process.env.DATA_FILE);
     const userIndex = users.findIndex((u) => u.Email === email);
 
     if (userIndex === -1) {
-        throw new Error('User not found');
+        throw new Error(USERMESSAGES.USER_NOT_FOUND);
     }
 
     users[userIndex].Name = name;
     users[userIndex].Lastname = lastname;
 
-    await writeFile(DATA_FILE, users);
+    await writeFile(process.env.DATA_FILE, users);
 
     return { name, lastname };
 }
