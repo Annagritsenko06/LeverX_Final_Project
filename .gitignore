@@ -4,6 +4,6 @@ Logs.json
 
 .env
 .husky
-backups/
+backups
 Users_data.json
 Users_posts.json
