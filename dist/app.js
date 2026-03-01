@@ -6,11 +6,8 @@ import postRoutes from './routes/postRoutes.js';
 import { logger } from './common/logger.js';
 import { STATUS_OK, STATUS_NOT_FOUND } from './common/constants.js';
 import { MESSAGES } from './common/messages.js';
-
 const app = express();
-
 app.use(express.json());
-
 app.get('/health', (req, res) => {
     logger.info(`Get request. Url: ${req.url}, port: ${req.socket.localPort}`);
     res.set({
@@ -25,16 +22,14 @@ app.get('/health', (req, res) => {
         version: version,
     });
 });
-
 app.use('/users', userRoutes);
 app.use('/posts', postRoutes);
-
 app.use((req, res) => {
     res.status(STATUS_NOT_FOUND)
         .type('text/plain')
         .send(MESSAGES.NOTHING_FOUND);
 });
-
 app.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
 });
+export default app;

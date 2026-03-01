@@ -1,16 +1,20 @@
 import { randomUUID } from 'crypto';
 import { readFile, writeFile } from '../common/fileHelpers.js';
 import { POSTSMESSAGES, MESSAGES } from '../common/messages.js';
+import type { Post, CreatePostInput, User } from '../types/types.js';
 
-export async function createPost(authorId, postData) {
+export async function createPost(
+    authorId: string,
+    postData: CreatePostInput
+): Promise<{ Title: string; created_date: Date }> {
     const { Title, Description } = postData;
 
-    const posts = await readFile(process.env.POSTS_FILE);
+    const posts = await readFile<Post[]>(process.env.POSTS_FILE as string);
 
     const created_date = new Date();
     const postId = randomUUID();
 
-    const newPost = {
+    const newPost: Post = {
         authorId,
         Post_id: postId,
         Title,
@@ -19,14 +23,23 @@ export async function createPost(authorId, postData) {
     };
 
     posts.push(newPost);
-    await writeFile(process.env.POSTS_FILE, posts);
+    await writeFile(process.env.POSTS_FILE as string, posts);
 
     return { Title, created_date };
 }
 
-export async function getUserPosts(userId) {
-    const posts = await readFile(process.env.POSTS_FILE);
-    const users = await readFile(process.env.DATA_FILE);
+export async function getUserPosts(
+    userId: string
+): Promise<
+    {
+        Title: string;
+        Description: string;
+        Created_data: Date | string;
+        Author: string;
+    }[]
+> {
+    const posts = await readFile<Post[]>(process.env.POSTS_FILE as string);
+    const users = await readFile<User[]>(process.env.DATA_FILE as string);
 
     const userPosts = posts.filter((post) => post.authorId === userId);
 
@@ -43,10 +56,14 @@ export async function getUserPosts(userId) {
     });
 }
 
-export async function updatePost(postId, authorId, updateData) {
+export async function updatePost(
+    postId: string,
+    authorId: string,
+    updateData: { Title: string; Description: string }
+): Promise<{ Title: string; updated_date: Date }> {
     const { Title, Description } = updateData;
 
-    const posts = await readFile(process.env.POSTS_FILE);
+    const posts = await readFile<Post[]>(process.env.POSTS_FILE as string);
     const postIndex = posts.findIndex(
         (post) => post.authorId === authorId && post.Post_id === postId
     );
@@ -60,13 +77,16 @@ export async function updatePost(postId, authorId, updateData) {
     posts[postIndex].Description = Description;
     posts[postIndex].Updated_data = updated_date;
 
-    await writeFile(process.env.POSTS_FILE, posts);
+    await writeFile(process.env.POSTS_FILE as string, posts);
 
     return { Title, updated_date };
 }
 
-export async function deletePost(postId, authorId) {
-    const posts = await readFile(process.env.POSTS_FILE);
+export async function deletePost(
+    postId: string,
+    authorId: string
+): Promise<boolean> {
+    const posts = await readFile<Post[]>(process.env.POSTS_FILE as string);
     const postIndex = posts.findIndex(
         (post) => post.Post_id === postId && post.authorId === authorId
     );
@@ -76,7 +96,7 @@ export async function deletePost(postId, authorId) {
     }
 
     posts.splice(postIndex, 1);
-    await writeFile(process.env.POSTS_FILE, posts);
+    await writeFile(process.env.POSTS_FILE as string, posts);
 
     return true;
 }

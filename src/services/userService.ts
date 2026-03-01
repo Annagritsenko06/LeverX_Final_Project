@@ -3,11 +3,14 @@ import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { readFile, writeFile } from '../common/fileHelpers.js';
 import { USERMESSAGES } from '../common/messages.js';
+import type { RegisterUserInput, User } from '../types/types.js';
 
-export async function registerUser(userData) {
+export async function registerUser(
+    userData: RegisterUserInput
+): Promise<{ userId: string; Name: string }> {
     const { Name, Lastname, Email, Password } = userData;
 
-    const users = await readFile(process.env.DATA_FILE);
+    const users = await readFile<User[]>(process.env.DATA_FILE as string);
     const existingUser = users.find((u) => u.Email === Email);
 
     if (existingUser) {
@@ -21,7 +24,7 @@ export async function registerUser(userData) {
             : process.env.SALT_ROUNDS;
     const passwordHash = await bcrypt.hash(Password, saltRounds || 10);
 
-    const newUser = {
+    const newUser: User = {
         Id: userId,
         Name,
         Lastname,
@@ -30,13 +33,16 @@ export async function registerUser(userData) {
     };
 
     users.push(newUser);
-    await writeFile(process.env.DATA_FILE, users);
+    await writeFile(process.env.DATA_FILE as string, users);
 
     return { userId, Name };
 }
 
-export async function loginUser(email, password) {
-    const users = await readFile(process.env.DATA_FILE);
+export async function loginUser(
+    email: string,
+    password: string
+): Promise<{ token: string; userEmail: string }> {
+    const users = await readFile<User[]>(process.env.DATA_FILE as string);
     const user = users.find((u) => u.Email === email);
 
     if (!user) {
@@ -56,15 +62,24 @@ export async function loginUser(email, password) {
         Email: user.Email,
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN,
-    });
+    const secret = process.env.JWT_SECRET as jwt.Secret;
+    const options: jwt.SignOptions = {};
+    const expiresIn = process.env.JWT_EXPIRES_IN;
+    if (expiresIn) {
+        options.expiresIn = expiresIn as jwt.SignOptions['expiresIn'];
+    }
+
+    const token = jwt.sign(payload, secret, options);
 
     return { token, userEmail: user.Email };
 }
 
-export async function updateUserProfile(email, name, lastname) {
-    const users = await readFile(process.env.DATA_FILE);
+export async function updateUserProfile(
+    email: string,
+    name: string,
+    lastname: string
+): Promise<{ name: string; lastname: string }> {
+    const users = await readFile<User[]>(process.env.DATA_FILE as string);
     const userIndex = users.findIndex((u) => u.Email === email);
 
     if (userIndex === -1) {
@@ -74,7 +89,7 @@ export async function updateUserProfile(email, name, lastname) {
     users[userIndex].Name = name;
     users[userIndex].Lastname = lastname;
 
-    await writeFile(process.env.DATA_FILE, users);
+    await writeFile(process.env.DATA_FILE as string, users);
 
     return { name, lastname };
 }

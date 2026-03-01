@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import nodemailer from 'nodemailer';
 import { MESSAGES } from '../common/messages.js';
-
+export const notification = new EventEmitter();
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -9,8 +9,6 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS,
     },
 });
-
-export const notification = new EventEmitter();
 notification.on('profileUpdated', async (userEmail, newName, newLastname) => {
     try {
         await transporter.sendMail({

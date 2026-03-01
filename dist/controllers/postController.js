@@ -6,11 +6,10 @@ import {
     STATUS_SERVER_ERROR,
 } from '../common/constants.js';
 import { POSTSMESSAGES, MESSAGES } from '../common/messages.js';
-
 export async function createPost(req, res) {
     try {
-        const result = await postService.createPost(req.user.Id, req.body);
-
+        const authReq = req;
+        const result = await postService.createPost(authReq.user.Id, req.body);
         res.status(STATUS_CREATED).json({
             success: true,
             message: POSTSMESSAGES.POST_CREATED,
@@ -23,12 +22,10 @@ export async function createPost(req, res) {
         });
     }
 }
-
 export async function getUserPosts(req, res) {
     try {
         const { userId } = req.params;
         const posts = await postService.getUserPosts(userId);
-
         res.status(STATUS_OK).json({
             success: true,
             posts,
@@ -39,16 +36,15 @@ export async function getUserPosts(req, res) {
         });
     }
 }
-
 export async function updatePost(req, res) {
     try {
+        const authReq = req;
         const { postId } = req.params;
         const result = await postService.updatePost(
             postId,
-            req.user.Id,
+            authReq.user.Id,
             req.body
         );
-
         res.status(STATUS_OK).json({
             success: true,
             message: POSTSMESSAGES.POST_UPDATED,
@@ -56,7 +52,10 @@ export async function updatePost(req, res) {
             Created_data: result.updated_date,
         });
     } catch (error) {
-        if (error.message === POSTSMESSAGES.POST_NOT_FOUND) {
+        if (
+            error instanceof Error &&
+            error.message === POSTSMESSAGES.POST_NOT_FOUND
+        ) {
             res.status(STATUS_NOT_FOUND).json({ error: error.message });
         } else {
             res.status(STATUS_SERVER_ERROR).json({
@@ -65,18 +64,20 @@ export async function updatePost(req, res) {
         }
     }
 }
-
 export async function deletePost(req, res) {
     try {
+        const authReq = req;
         const { postId } = req.params;
-        await postService.deletePost(postId, req.user.Id);
-
+        await postService.deletePost(postId, authReq.user.Id);
         res.status(STATUS_OK).json({
             success: true,
             message: POSTSMESSAGES.POST_DELETED,
         });
     } catch (error) {
-        if (error.message === POSTSMESSAGES.POST_NOT_FOUND) {
+        if (
+            error instanceof Error &&
+            error.message === POSTSMESSAGES.POST_NOT_FOUND
+        ) {
             res.status(STATUS_NOT_FOUND).json({ error: error.message });
         } else {
             res.status(STATUS_SERVER_ERROR).json({

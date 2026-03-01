@@ -1,21 +1,17 @@
 export const USERMESSAGES = {
     USER_REGISTERED: 'User successfully registered',
     USER_UPDATED: 'User successfully updated',
-
     USER_ALREADY_EXISTS: 'User already exists',
     USER_NOT_FOUND: 'User not found',
     WRONG_PASSWORD: 'Wrong password',
     USER_NO_ACCESS: 'You don’t have access to this resource',
 };
-
 export const POSTSMESSAGES = {
     POST_CREATED: 'Post successfully created',
     POST_UPDATED: 'Post successfully updated',
     POST_DELETED: 'Post successfully deleted',
-
     POST_NOT_FOUND: 'Post not found',
 };
-
 export const MESSAGES = {
     INTERNAL_SERVER_ERROR: 'Internal Server Error',
     DATA_IS_EMPTY: 'Entered data is empty',
