@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
-import { STATUS_UNAUTHORIZED, STATUS_FORBIDDEN } from '../common/constants.js';
+import { HttpStatus } from '../common/constants.js';
 import { USERMESSAGES, MESSAGES } from '../common/messages.js';
 import type { AuthRequest, AuthUser } from '../types/types.js';
 
@@ -13,7 +13,7 @@ export function authenticateToken(
     const token = authHeader?.split(' ')[1];
 
     if (!token) {
-        res.status(STATUS_UNAUTHORIZED).send(USERMESSAGES.USER_NO_ACCESS);
+        res.status(HttpStatus.UNAUTHORIZED).send(USERMESSAGES.USER_NO_ACCESS);
         return;
     }
 
@@ -22,7 +22,7 @@ export function authenticateToken(
         process.env.JWT_SECRET as string,
         (err: jwt.VerifyErrors | null, user: unknown) => {
             if (err) {
-                res.status(STATUS_FORBIDDEN).send(MESSAGES.TOKEN_EXPIRED);
+                res.status(HttpStatus.FORBIDDEN).send(MESSAGES.TOKEN_EXPIRED);
                 return;
             }
             console.log('req.user:', user);

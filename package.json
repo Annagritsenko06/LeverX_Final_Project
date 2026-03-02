@@ -19,8 +19,6 @@
     "description": "",
     "main": "dist/app.js",
     "scripts": {
-        "jwt-secret": "node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\"",
-        "test": "echo \"Error: no test specified\" && exit 1",
         "prepare": "husky",
         "build": "tsc",
         "start": "node dist/app.js",
@@ -28,7 +26,7 @@
         "lint": "eslint .",
         "prettier:check": "prettier --check .",
         "prettier": "prettier --write .",
-        "backup": "node backupUsers.js"
+        "backup": "node backupUsers.ts"
     },
     "keywords": [],
     "author": "",
@@ -39,7 +37,6 @@
         "dotenv": "^17.3.1",
         "events": "^3.3.0",
         "express": "^5.2.1",
-        "fs": "^0.0.1-security",
         "globals": "^17.3.0",
         "jsonwebtoken": "^9.0.3",
         "nodemailer": "^8.0.1",

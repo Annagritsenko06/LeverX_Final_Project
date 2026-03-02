@@ -6,8 +6,8 @@ import type { Post, CreatePostInput, User } from '../types/types.js';
 export async function createPost(
     authorId: string,
     postData: CreatePostInput
-): Promise<{ Title: string; created_date: Date }> {
-    const { Title, Description } = postData;
+): Promise<{ title: string; created_date: Date }> {
+    const { title, description } = postData;
 
     const posts = await readFile<Post[]>(process.env.POSTS_FILE as string);
 
@@ -16,26 +16,24 @@ export async function createPost(
 
     const newPost: Post = {
         authorId,
-        Post_id: postId,
-        Title,
-        Description,
-        Created_data: created_date,
+        postId: postId,
+        title,
+        description,
+        createdData: created_date,
     };
 
     posts.push(newPost);
     await writeFile(process.env.POSTS_FILE as string, posts);
 
-    return { Title, created_date };
+    return { title, created_date };
 }
 
-export async function getUserPosts(
-    userId: string
-): Promise<
+export async function getUserPosts(userId: string): Promise<
     {
-        Title: string;
-        Description: string;
-        Created_data: Date | string;
-        Author: string;
+        title: string;
+        description: string;
+        created_data: Date | string;
+        author: string;
     }[]
 > {
     const posts = await readFile<Post[]>(process.env.POSTS_FILE as string);
@@ -44,13 +42,13 @@ export async function getUserPosts(
     const userPosts = posts.filter((post) => post.authorId === userId);
 
     return userPosts.map((post) => {
-        const author = users.find((u) => u.Id === post.authorId);
+        const author = users.find((u) => u.id === post.authorId);
         return {
-            Title: post.Title,
-            Description: post.Description,
-            Created_data: post.Created_data,
-            Author: author
-                ? `${author.Name} ${author.Lastname}`
+            title: post.title,
+            description: post.description,
+            created_data: post.createdData,
+            author: author
+                ? `${author.name} ${author.lastname}`
                 : MESSAGES.UNKNOWN_AUTHOR,
         };
     });
@@ -59,13 +57,13 @@ export async function getUserPosts(
 export async function updatePost(
     postId: string,
     authorId: string,
-    updateData: { Title: string; Description: string }
-): Promise<{ Title: string; updated_date: Date }> {
-    const { Title, Description } = updateData;
+    updateData: { title: string; description: string }
+): Promise<{ title: string; updated_date: Date }> {
+    const { title, description } = updateData;
 
     const posts = await readFile<Post[]>(process.env.POSTS_FILE as string);
     const postIndex = posts.findIndex(
-        (post) => post.authorId === authorId && post.Post_id === postId
+        (post) => post.authorId === authorId && post.postId === postId
     );
 
     if (postIndex === -1) {
@@ -73,13 +71,15 @@ export async function updatePost(
     }
 
     const updated_date = new Date();
-    posts[postIndex].Title = Title;
-    posts[postIndex].Description = Description;
-    posts[postIndex].Updated_data = updated_date;
-
+    posts[postIndex] = {
+        ...posts[postIndex],
+        title,
+        description,
+        updatedData: new Date(),
+    };
     await writeFile(process.env.POSTS_FILE as string, posts);
 
-    return { Title, updated_date };
+    return { title, updated_date };
 }
 
 export async function deletePost(
@@ -88,7 +88,7 @@ export async function deletePost(
 ): Promise<boolean> {
     const posts = await readFile<Post[]>(process.env.POSTS_FILE as string);
     const postIndex = posts.findIndex(
-        (post) => post.Post_id === postId && post.authorId === authorId
+        (post) => post.postId === postId && post.authorId === authorId
     );
 
     if (postIndex === -1) {

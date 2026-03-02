@@ -7,11 +7,11 @@ import type { RegisterUserInput, User } from '../types/types.js';
 
 export async function registerUser(
     userData: RegisterUserInput
-): Promise<{ userId: string; Name: string }> {
-    const { Name, Lastname, Email, Password } = userData;
+): Promise<{ userId: string; name: string }> {
+    const { name, lastname, email, password } = userData;
 
     const users = await readFile<User[]>(process.env.DATA_FILE as string);
-    const existingUser = users.find((u) => u.Email === Email);
+    const existingUser = users.find((u) => u.email === email);
 
     if (existingUser) {
         throw new Error(USERMESSAGES.USER_ALREADY_EXISTS);
@@ -22,20 +22,20 @@ export async function registerUser(
         typeof process.env.SALT_ROUNDS === 'string'
             ? Number(process.env.SALT_ROUNDS)
             : process.env.SALT_ROUNDS;
-    const passwordHash = await bcrypt.hash(Password, saltRounds || 10);
+    const passwordHash = await bcrypt.hash(password, saltRounds || 10);
 
     const newUser: User = {
-        Id: userId,
-        Name,
-        Lastname,
-        Email,
-        Password: passwordHash,
+        id: userId,
+        name,
+        lastname,
+        email,
+        password: passwordHash,
     };
 
     users.push(newUser);
     await writeFile(process.env.DATA_FILE as string, users);
 
-    return { userId, Name };
+    return { userId, name };
 }
 
 export async function loginUser(
@@ -43,23 +43,23 @@ export async function loginUser(
     password: string
 ): Promise<{ token: string; userEmail: string }> {
     const users = await readFile<User[]>(process.env.DATA_FILE as string);
-    const user = users.find((u) => u.Email === email);
+    const user = users.find((u) => u.email === email);
 
     if (!user) {
         throw new Error(USERMESSAGES.USER_NOT_FOUND);
     }
 
-    const isValid = await bcrypt.compare(password, user.Password);
+    const isValid = await bcrypt.compare(password, user.password);
 
     if (!isValid) {
         throw new Error(USERMESSAGES.WRONG_PASSWORD);
     }
 
     const payload = {
-        Id: user.Id,
-        Name: user.Name,
-        Lastname: user.Lastname,
-        Email: user.Email,
+        id: user.id,
+        name: user.name,
+        lastname: user.lastname,
+        email: user.email,
     };
 
     const secret = process.env.JWT_SECRET as jwt.Secret;
@@ -71,7 +71,7 @@ export async function loginUser(
 
     const token = jwt.sign(payload, secret, options);
 
-    return { token, userEmail: user.Email };
+    return { token, userEmail: user.email };
 }
 
 export async function updateUserProfile(
@@ -80,14 +80,14 @@ export async function updateUserProfile(
     lastname: string
 ): Promise<{ name: string; lastname: string }> {
     const users = await readFile<User[]>(process.env.DATA_FILE as string);
-    const userIndex = users.findIndex((u) => u.Email === email);
+    const userIndex = users.findIndex((u) => u.email === email);
 
     if (userIndex === -1) {
         throw new Error(USERMESSAGES.USER_NOT_FOUND);
     }
 
-    users[userIndex].Name = name;
-    users[userIndex].Lastname = lastname;
+    users[userIndex].name = name;
+    users[userIndex].lastname = lastname;
 
     await writeFile(process.env.DATA_FILE as string, users);
 

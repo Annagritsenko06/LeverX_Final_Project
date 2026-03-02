@@ -5,7 +5,7 @@ import packageJS from '../package.json' with { type: 'json' };
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import { logger } from './common/logger.js';
-import { STATUS_OK, STATUS_NOT_FOUND } from './common/constants.js';
+import { HttpStatus } from './common/constants.js';
 import { MESSAGES } from './common/messages.js';
 
 const app = express();
@@ -22,7 +22,7 @@ app.get('/health', (req: Request, res: Response) => {
         Date: new Date().toUTCString(),
     });
     const version = packageJS.version;
-    res.status(STATUS_OK).json({
+    res.status(HttpStatus.OK).json({
         version: version,
     });
 });
@@ -31,7 +31,7 @@ app.use('/users', userRoutes);
 app.use('/posts', postRoutes);
 
 app.use((req: Request, res: Response) => {
-    res.status(STATUS_NOT_FOUND)
+    res.status(HttpStatus.NOT_FOUND)
         .type('text/plain')
         .send(MESSAGES.NOTHING_FOUND);
 });

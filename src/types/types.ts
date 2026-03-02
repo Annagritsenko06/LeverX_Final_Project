@@ -1,10 +1,10 @@
 import type { Request } from 'express';
 
 export interface AuthUser {
-    Id: string;
-    Name: string;
-    Lastname: string;
-    Email: string;
+    id: string;
+    name: string;
+    lastname: string;
+    email: string;
 }
 
 export interface AuthRequest extends Request {
@@ -13,29 +13,29 @@ export interface AuthRequest extends Request {
 
 export interface Post {
     authorId: string;
-    Post_id: string;
-    Title: string;
-    Description: string;
-    Created_data: Date | string;
-    Updated_data?: Date | string;
+    postId: string;
+    title: string;
+    description: string;
+    createdData: Date | string;
+    updatedData?: Date | string;
 }
 
 export interface User {
-    Id: string;
-    Name: string;
-    Lastname: string;
-    Email: string;
-    Password: string;
+    id: string;
+    name: string;
+    lastname: string;
+    email: string;
+    password: string;
 }
 
 export interface CreatePostInput {
-    Title: string;
-    Description: string;
+    title: string;
+    description: string;
 }
 
 export interface RegisterUserInput {
-    Name: string;
-    Lastname: string;
-    Email: string;
-    Password: string;
+    name: string;
+    lastname: string;
+    email: string;
+    password: string;
 }
