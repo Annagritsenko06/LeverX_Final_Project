@@ -1,11 +1,14 @@
+import { Injectable } from '@nestjs/common';
 import winston from 'winston';
 import 'dotenv/config';
-
-export const logger = winston.createLogger({
+@Injectable()
+export class LoggerService {
+  private logger = winston.createLogger({
     level: 'info',
     format: winston.format.json(),
     transports: [
-        new winston.transports.Console(),
-        new winston.transports.File({ filename: process.env.filename }),
+      new winston.transports.Console(),
+      new winston.transports.File({ filename: process.env.filename }),
     ],
-});
+  });
+}

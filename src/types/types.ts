@@ -1,41 +1,42 @@
 import type { Request } from 'express';
 
 export interface AuthUser {
-    id: string;
-    name: string;
-    lastname: string;
-    email: string;
+  id: string;
+  name: string;
+  lastname: string;
+  email: string;
 }
 
 export interface AuthRequest extends Request {
-    user: AuthUser;
+  user: AuthUser;
 }
 
 export interface Post {
-    authorId: string;
-    postId: string;
-    title: string;
-    description: string;
-    createdData: Date | string;
-    updatedData?: Date | string;
+  authorId: string;
+  postId: string;
+  title: string;
+  description: string;
+  createdData: Date | string;
+  updatedData?: Date | string;
+  likes: string[];
 }
 
 export interface User {
-    id: string;
-    name: string;
-    lastname: string;
-    email: string;
-    password: string;
+  id: string;
+  name: string;
+  lastname: string;
+  email: string;
+  password: string;
 }
 
 export interface CreatePostInput {
-    title: string;
-    description: string;
+  title: string;
+  description: string;
 }
 
 export interface RegisterUserInput {
-    name: string;
-    lastname: string;
-    email: string;
-    password: string;
+  name: string;
+  lastname: string;
+  email: string;
+  password: string;
 }

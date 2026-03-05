@@ -1,3 +1,10 @@
+/dist
+/build
+
+
+backups
+
+.env
 node_modules/
 
 Logs.json
