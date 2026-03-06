@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { UserController } from './users/users.controller';
 import { PostsController } from './posts/posts.controller';
 import { UserService } from './users/users.service';
@@ -10,20 +8,25 @@ import { FileHelpers } from './common/fileHelpers';
 import { NotificationService } from './notifications/notifications.service';
 import { AuthGuard } from './auth/auth.service';
 import { ConfigModule } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { PasswordHashGenerator } from './common/passwordHashGenerator';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     EventEmitterModule.forRoot(),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
+    }),
   ],
-  controllers: [AppController, UserController, PostsController],
+  controllers: [UserController, PostsController],
   providers: [
-    AppService,
     UserService,
     PostsService,
     FileHelpers,
     NotificationService,
     AuthGuard,
+    PasswordHashGenerator,
   ],
 })
 export class AppModule {}

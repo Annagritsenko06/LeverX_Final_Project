@@ -40,3 +40,10 @@ export interface RegisterUserInput {
   email: string;
   password: string;
 }
+
+export interface UserPostDto {
+  title: string;
+  description: string;
+  createdData: Date | string;
+  author: string;
+}

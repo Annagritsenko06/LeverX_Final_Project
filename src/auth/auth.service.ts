@@ -1,44 +1,57 @@
-import jwt from 'jsonwebtoken';
-import type { Request, Response, NextFunction } from 'express';
-import { HttpStatus } from '../common/constants.js';
-import { USERMESSAGES, MESSAGES } from '../common/messages.js';
-import type { AuthRequest, AuthUser } from '../types/types.js';
-
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import type { Request } from 'express';
+import type { AuthRequest, AuthUser, User } from '../types/types.js';
+import { FileHelpers } from '../common/fileHelpers';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean | Promise<boolean> {
-    const ctx = context.switchToHttp();
-    const req = ctx.getRequest<Request>();
-    const res = ctx.getResponse<Response>();
-
-    return new Promise<boolean>((resolve) => {
-      this.authenticateToken(req, res, () => resolve(true));
-    });
+  private dataFile: string;
+  constructor(
+    private jwtService: JwtService,
+    private fileHelpers: FileHelpers,
+    private ConfigService: ConfigService,
+  ) {
+    this.dataFile = this.ConfigService.get<string>('DATA_FILE', {
+      infer: true,
+    })!;
   }
-  authenticateToken(req: Request, res: Response, next: NextFunction): void {
-    const authHeader = req.header('authorization');
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req = context.switchToHttp().getRequest<Request>();
+
+    const authHeader = req.headers.authorization;
     const token = authHeader?.split(' ')[1];
 
     if (!token) {
-      res.status(HttpStatus.UNAUTHORIZED).send(USERMESSAGES.USER_NO_ACCESS);
-      return;
+      throw new UnauthorizedException('No access');
     }
 
-    jwt.verify(
-      token,
-      process.env.JWT_SECRET as string,
-      (err: jwt.VerifyErrors | null, user: unknown) => {
-        if (err) {
-          res.status(HttpStatus.FORBIDDEN).send(MESSAGES.TOKEN_EXPIRED);
-          return;
-        }
-        console.log('req.user:', user);
-        (req as AuthRequest).user = user as AuthUser;
-        next();
-      },
-    );
+    try {
+      const payload = await this.jwtService.verifyAsync<AuthUser>(token);
+      const user = await this.validate(payload);
+
+      (req as AuthRequest).user = payload;
+
+      return true;
+    } catch {
+      throw new ForbiddenException('Token expired');
+    }
+  }
+
+  async validate(req: AuthUser): Promise<User> {
+    const users = await this.fileHelpers.readFile<User[]>(this.dataFile);
+    const existingUser = users.find((user) => user.id === req.id);
+    if (!existingUser) {
+      throw new UnauthorizedException('User doesnt exist');
+    }
+    return existingUser;
   }
 }

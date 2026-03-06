@@ -1,26 +1,32 @@
 import { Injectable } from '@nestjs/common';
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
+import bcrypt from 'bcrypt';
 import { FileHelpers } from '../common/fileHelpers';
+import { PasswordHashGenerator } from '../common/passwordHashGenerator';
 import { USERMESSAGES } from '../common/messages';
 import type { RegisterUserInput, User } from '../types/types';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly fileHelpers: FileHelpers) {}
+  private dataFile: string;
+  constructor(
+    private readonly fileHelpers: FileHelpers,
+    private passwordGenerator: PasswordHashGenerator,
+    private ConfigService: ConfigService,
+  ) {
+    this.dataFile = this.ConfigService.get<string>('DATA_FILE', {
+      infer: true,
+    })!;
+  }
 
   async registerUser(
     userData: RegisterUserInput,
   ): Promise<{ userId: string; name: string }> {
     const { name, lastname, email, password } = userData;
 
-    const dataFile = process.env.DATA_FILE;
-    if (!dataFile) {
-      throw new Error('DATA_FILE environment variable is not defined');
-    }
-
-    const users = await this.fileHelpers.readFile<User[]>(dataFile);
+    const users = await this.fileHelpers.readFile<User[]>(this.dataFile);
     const existingUser = users.find((u) => u.email === email);
 
     if (existingUser) {
@@ -28,9 +34,8 @@ export class UserService {
     }
 
     const userId = randomUUID();
-    const saltEnv = process.env.SALT_ROUNDS;
-    const saltRounds = typeof saltEnv === 'string' ? Number(saltEnv) : saltEnv;
-    const passwordHash = await bcrypt.hash(password, saltRounds || 10);
+    const passwordHash =
+      await this.passwordGenerator.generatePasswordHash(password);
 
     const newUser: User = {
       id: userId,
@@ -41,7 +46,7 @@ export class UserService {
     };
 
     users.push(newUser);
-    await this.fileHelpers.writeFile(dataFile, users);
+    await this.fileHelpers.writeFile(this.dataFile, users);
 
     return { userId, name };
   }
@@ -50,12 +55,7 @@ export class UserService {
     email: string,
     password: string,
   ): Promise<{ token: string; userEmail: string }> {
-    const dataFile = process.env.DATA_FILE;
-    if (!dataFile) {
-      throw new Error('DATA_FILE environment variable is not defined');
-    }
-
-    const users = await this.fileHelpers.readFile<User[]>(dataFile);
+    const users = await this.fileHelpers.readFile<User[]>(this.dataFile);
     const user = users.find((u) => u.email === email);
 
     if (!user) {
@@ -92,12 +92,7 @@ export class UserService {
     name: string,
     lastname: string,
   ): Promise<{ name: string; lastname: string }> {
-    const dataFile = process.env.DATA_FILE;
-    if (!dataFile) {
-      throw new Error('DATA_FILE environment variable is not defined');
-    }
-
-    const users = await this.fileHelpers.readFile<User[]>(dataFile);
+    const users = await this.fileHelpers.readFile<User[]>(this.dataFile);
     const userIndex = users.findIndex((u) => u.email === email);
 
     if (userIndex === -1) {
@@ -107,7 +102,7 @@ export class UserService {
     users[userIndex].name = name;
     users[userIndex].lastname = lastname;
 
-    await this.fileHelpers.writeFile(dataFile, users);
+    await this.fileHelpers.writeFile(this.dataFile, users);
 
     return { name, lastname };
   }

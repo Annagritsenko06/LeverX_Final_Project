@@ -2,25 +2,35 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { FileHelpers } from '../common/fileHelpers';
 import { POSTSMESSAGES, MESSAGES } from '../common/messages';
-import type { Post, CreatePostInput, User } from '../types/types';
+import type { Post, CreatePostInput, User, UserPostDto } from '../types/types';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PostsService {
-  constructor(private readonly fileHelpers: FileHelpers) {}
+  private postsFile: string;
+  private dataFile: string;
+
+  constructor(
+    private readonly fileHelpers: FileHelpers,
+    private ConfigService: ConfigService,
+  ) {
+    this.postsFile = this.ConfigService.get<string>('POSTS_FILE', {
+      infer: true,
+    })!;
+    this.dataFile = this.ConfigService.get<string>('DATA_FILE', {
+      infer: true,
+    })!;
+  }
 
   async createPost(
     authorId: string,
     postData: CreatePostInput,
-  ): Promise<{ title: string; created_date: Date }> {
+  ): Promise<{ title: string; createdDate: Date }> {
     const { title, description } = postData;
 
-    const postsFile = process.env.POSTS_FILE;
-    if (!postsFile) {
-      throw new Error('POSTS_FILE environment variable is not defined');
-    }
-    const posts = await this.fileHelpers.readFile<Post[]>(postsFile);
+    const posts = await this.fileHelpers.readFile<Post[]>(this.postsFile);
 
-    const created_date = new Date();
+    const createdDate = new Date();
     const postId = randomUUID();
 
     const newPost: Post = {
@@ -28,41 +38,30 @@ export class PostsService {
       postId,
       title,
       description,
-      createdData: created_date,
+      createdData: createdDate,
       likes: [],
     };
 
     posts.push(newPost);
-    await this.fileHelpers.writeFile(postsFile, posts);
+    await this.fileHelpers.writeFile(this.postsFile, posts);
 
-    return { title, created_date };
+    return { title, createdDate };
   }
 
-  async getUserPosts(userId: string): Promise<
-    {
-      title: string;
-      description: string;
-      created_data: Date | string;
-      author: string;
-    }[]
-  > {
-    const postsFile = process.env.POSTS_FILE;
-    const dataFile = process.env.DATA_FILE;
-    if (!postsFile || !dataFile) {
-      throw new Error('FILE environment variable is not defined');
-    }
-
-    const posts = await this.fileHelpers.readFile<Post[]>(postsFile);
-    const users = await this.fileHelpers.readFile<User[]>(dataFile);
-
+  async getUserPosts(userId: string): Promise<UserPostDto[]> {
+    const [posts, users] = await Promise.all([
+      this.fileHelpers.readFile<Post[]>(this.postsFile),
+      this.fileHelpers.readFile<User[]>(this.dataFile),
+    ]);
+    const usersMap = new Map(users.map((user) => [user.id, user]));
     const userPosts = posts.filter((post) => post.authorId === userId);
 
     return userPosts.map((post) => {
-      const author = users.find((u) => u.id === post.authorId);
+      const author = usersMap.get(post.authorId);
       return {
         title: post.title,
         description: post.description,
-        created_data: post.createdData,
+        createdData: post.createdData,
         author: author
           ? `${author.name} ${author.lastname}`
           : MESSAGES.UNKNOWN_AUTHOR,
@@ -74,14 +73,10 @@ export class PostsService {
     postId: string,
     authorId: string,
     updateData: { title: string; description: string },
-  ): Promise<{ title: string; updated_date: Date }> {
+  ): Promise<{ title: string; updatedDate: Date }> {
     const { title, description } = updateData;
 
-    const postsFile = process.env.POSTS_FILE;
-    if (!postsFile) {
-      throw new Error('POSTS_FILE environment variable is not defined');
-    }
-    const posts = await this.fileHelpers.readFile<Post[]>(postsFile);
+    const posts = await this.fileHelpers.readFile<Post[]>(this.postsFile);
     const postIndex = posts.findIndex(
       (post) => post.authorId === authorId && post.postId === postId,
     );
@@ -90,24 +85,20 @@ export class PostsService {
       throw new Error(POSTSMESSAGES.POST_NOT_FOUND);
     }
 
-    const updated_date = new Date();
+    const updatedDate = new Date();
     posts[postIndex] = {
       ...posts[postIndex],
       title,
       description,
-      updatedData: updated_date,
+      updatedData: updatedDate,
     };
-    await this.fileHelpers.writeFile(postsFile, posts);
+    await this.fileHelpers.writeFile(this.postsFile, posts);
 
-    return { title, updated_date };
+    return { title, updatedDate };
   }
 
   async deletePost(postId: string, authorId: string): Promise<boolean> {
-    const postsFile = process.env.POSTS_FILE;
-    if (!postsFile) {
-      throw new Error('POSTS_FILE environment variable is not defined');
-    }
-    const posts = await this.fileHelpers.readFile<Post[]>(postsFile);
+    const posts = await this.fileHelpers.readFile<Post[]>(this.postsFile);
     const postIndex = posts.findIndex(
       (post) => post.postId === postId && post.authorId === authorId,
     );
@@ -117,17 +108,13 @@ export class PostsService {
     }
 
     posts.splice(postIndex, 1);
-    await this.fileHelpers.writeFile(postsFile, posts);
+    await this.fileHelpers.writeFile(this.postsFile, posts);
 
     return true;
   }
 
   async likePost(postId: string, userId: string): Promise<void> {
-    const postsFile = process.env.POSTS_FILE;
-    if (!postsFile) {
-      throw new Error('POSTS_FILE environment variable is not defined');
-    }
-    const posts = await this.fileHelpers.readFile<Post[]>(postsFile);
+    const posts = await this.fileHelpers.readFile<Post[]>(this.postsFile);
     const postIndex = posts.findIndex((post) => post.postId === postId);
 
     if (postIndex === -1) {
@@ -138,16 +125,12 @@ export class PostsService {
     if (!likes.includes(userId)) {
       likes.push(userId);
       posts[postIndex].likes = likes;
-      await this.fileHelpers.writeFile(postsFile, posts);
+      await this.fileHelpers.writeFile(this.postsFile, posts);
     }
   }
 
   async unlikePost(postId: string, userId: string): Promise<void> {
-    const postsFile = process.env.POSTS_FILE;
-    if (!postsFile) {
-      throw new Error('POSTS_FILE environment variable is not defined');
-    }
-    const posts = await this.fileHelpers.readFile<Post[]>(postsFile);
+    const posts = await this.fileHelpers.readFile<Post[]>(this.postsFile);
     const postIndex = posts.findIndex((post) => post.postId === postId);
 
     if (postIndex === -1) {
@@ -158,6 +141,6 @@ export class PostsService {
     const newLikes = likes.filter((id) => id !== userId);
     posts[postIndex].likes = newLikes;
 
-    await this.fileHelpers.writeFile(postsFile, posts);
+    await this.fileHelpers.writeFile(this.postsFile, posts);
   }
 }
