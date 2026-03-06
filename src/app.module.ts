@@ -10,6 +10,8 @@ import { AuthGuard } from './auth/auth.service';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PasswordHashGenerator } from './common/passwordHashGenerator';
+import { UsersRepository } from './users/users.repository';
+import { PostsRepository } from './posts/posts.repository';
 
 @Module({
   imports: [
@@ -27,6 +29,8 @@ import { PasswordHashGenerator } from './common/passwordHashGenerator';
     NotificationService,
     AuthGuard,
     PasswordHashGenerator,
+    UsersRepository,
+    PostsRepository,
   ],
 })
 export class AppModule {}

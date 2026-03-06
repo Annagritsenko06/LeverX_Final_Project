@@ -2,31 +2,24 @@ import { Injectable } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcrypt';
-import { FileHelpers } from '../common/fileHelpers';
 import { PasswordHashGenerator } from '../common/passwordHashGenerator';
 import { USERMESSAGES } from '../common/messages';
 import type { RegisterUserInput, User } from '../types/types';
-import { ConfigService } from '@nestjs/config';
+import { UsersRepository } from './users.repository';
 
 @Injectable()
 export class UserService {
-  private dataFile: string;
   constructor(
-    private readonly fileHelpers: FileHelpers,
-    private passwordGenerator: PasswordHashGenerator,
-    private ConfigService: ConfigService,
-  ) {
-    this.dataFile = this.ConfigService.get<string>('DATA_FILE', {
-      infer: true,
-    })!;
-  }
+    private readonly usersRepository: UsersRepository,
+    private readonly passwordGenerator: PasswordHashGenerator,
+  ) {}
 
   async registerUser(
     userData: RegisterUserInput,
   ): Promise<{ userId: string; name: string }> {
     const { name, lastname, email, password } = userData;
 
-    const users = await this.fileHelpers.readFile<User[]>(this.dataFile);
+    const users = await this.usersRepository.findAll();
     const existingUser = users.find((u) => u.email === email);
 
     if (existingUser) {
@@ -46,7 +39,7 @@ export class UserService {
     };
 
     users.push(newUser);
-    await this.fileHelpers.writeFile(this.dataFile, users);
+    await this.usersRepository.saveAll(users);
 
     return { userId, name };
   }
@@ -55,7 +48,7 @@ export class UserService {
     email: string,
     password: string,
   ): Promise<{ token: string; userEmail: string }> {
-    const users = await this.fileHelpers.readFile<User[]>(this.dataFile);
+    const users = await this.usersRepository.findAll();
     const user = users.find((u) => u.email === email);
 
     if (!user) {
@@ -92,7 +85,7 @@ export class UserService {
     name: string,
     lastname: string,
   ): Promise<{ name: string; lastname: string }> {
-    const users = await this.fileHelpers.readFile<User[]>(this.dataFile);
+    const users = await this.usersRepository.findAll();
     const userIndex = users.findIndex((u) => u.email === email);
 
     if (userIndex === -1) {
@@ -102,7 +95,7 @@ export class UserService {
     users[userIndex].name = name;
     users[userIndex].lastname = lastname;
 
-    await this.fileHelpers.writeFile(this.dataFile, users);
+    await this.usersRepository.saveAll(users);
 
     return { name, lastname };
   }

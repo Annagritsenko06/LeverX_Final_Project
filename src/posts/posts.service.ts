@@ -1,26 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { FileHelpers } from '../common/fileHelpers';
 import { POSTSMESSAGES, MESSAGES } from '../common/messages';
 import type { Post, CreatePostInput, User, UserPostDto } from '../types/types';
-import { ConfigService } from '@nestjs/config';
+import { PostsRepository } from './posts.repository';
 
 @Injectable()
 export class PostsService {
-  private postsFile: string;
-  private dataFile: string;
-
-  constructor(
-    private readonly fileHelpers: FileHelpers,
-    private ConfigService: ConfigService,
-  ) {
-    this.postsFile = this.ConfigService.get<string>('POSTS_FILE', {
-      infer: true,
-    })!;
-    this.dataFile = this.ConfigService.get<string>('DATA_FILE', {
-      infer: true,
-    })!;
-  }
+  constructor(private readonly postsRepository: PostsRepository) {}
 
   async createPost(
     authorId: string,
@@ -28,7 +14,7 @@ export class PostsService {
   ): Promise<{ title: string; createdDate: Date }> {
     const { title, description } = postData;
 
-    const posts = await this.fileHelpers.readFile<Post[]>(this.postsFile);
+    const posts = await this.postsRepository.findAllPosts();
 
     const createdDate = new Date();
     const postId = randomUUID();
@@ -43,15 +29,15 @@ export class PostsService {
     };
 
     posts.push(newPost);
-    await this.fileHelpers.writeFile(this.postsFile, posts);
+    await this.postsRepository.saveAllPosts(posts);
 
     return { title, createdDate };
   }
 
   async getUserPosts(userId: string): Promise<UserPostDto[]> {
     const [posts, users] = await Promise.all([
-      this.fileHelpers.readFile<Post[]>(this.postsFile),
-      this.fileHelpers.readFile<User[]>(this.dataFile),
+      this.postsRepository.findAllPosts(),
+      this.postsRepository.findAllUsers(),
     ]);
     const usersMap = new Map(users.map((user) => [user.id, user]));
     const userPosts = posts.filter((post) => post.authorId === userId);
@@ -76,7 +62,7 @@ export class PostsService {
   ): Promise<{ title: string; updatedDate: Date }> {
     const { title, description } = updateData;
 
-    const posts = await this.fileHelpers.readFile<Post[]>(this.postsFile);
+    const posts = await this.postsRepository.findAllPosts();
     const postIndex = posts.findIndex(
       (post) => post.authorId === authorId && post.postId === postId,
     );
@@ -92,13 +78,13 @@ export class PostsService {
       description,
       updatedData: updatedDate,
     };
-    await this.fileHelpers.writeFile(this.postsFile, posts);
+    await this.postsRepository.saveAllPosts(posts);
 
     return { title, updatedDate };
   }
 
   async deletePost(postId: string, authorId: string): Promise<boolean> {
-    const posts = await this.fileHelpers.readFile<Post[]>(this.postsFile);
+    const posts = await this.postsRepository.findAllPosts();
     const postIndex = posts.findIndex(
       (post) => post.postId === postId && post.authorId === authorId,
     );
@@ -108,13 +94,13 @@ export class PostsService {
     }
 
     posts.splice(postIndex, 1);
-    await this.fileHelpers.writeFile(this.postsFile, posts);
+    await this.postsRepository.saveAllPosts(posts);
 
     return true;
   }
 
   async likePost(postId: string, userId: string): Promise<void> {
-    const posts = await this.fileHelpers.readFile<Post[]>(this.postsFile);
+    const posts = await this.postsRepository.findAllPosts();
     const postIndex = posts.findIndex((post) => post.postId === postId);
 
     if (postIndex === -1) {
@@ -125,12 +111,12 @@ export class PostsService {
     if (!likes.includes(userId)) {
       likes.push(userId);
       posts[postIndex].likes = likes;
-      await this.fileHelpers.writeFile(this.postsFile, posts);
+      await this.postsRepository.saveAllPosts(posts);
     }
   }
 
   async unlikePost(postId: string, userId: string): Promise<void> {
-    const posts = await this.fileHelpers.readFile<Post[]>(this.postsFile);
+    const posts = await this.postsRepository.findAllPosts();
     const postIndex = posts.findIndex((post) => post.postId === postId);
 
     if (postIndex === -1) {
@@ -141,6 +127,6 @@ export class PostsService {
     const newLikes = likes.filter((id) => id !== userId);
     posts[postIndex].likes = newLikes;
 
-    await this.fileHelpers.writeFile(this.postsFile, posts);
+    await this.postsRepository.saveAllPosts(posts);
   }
 }

@@ -7,7 +7,6 @@ import {
   Body,
   Param,
   Req,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
