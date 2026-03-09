@@ -4,8 +4,9 @@ import { randomUUID } from 'crypto';
 import bcrypt from 'bcrypt';
 import { PasswordHashGenerator } from '../common/passwordHashGenerator';
 import { USERMESSAGES } from '../common/messages';
-import type { RegisterUserInput, User } from '../types/types';
+import type { RegisterUserInput } from '../types/types';
 import { UsersRepository } from './users.repository';
+import { sequelize } from '../common/db/db';
 
 @Injectable()
 export class UserService {
@@ -19,37 +20,30 @@ export class UserService {
   ): Promise<{ userId: string; name: string }> {
     const { name, lastname, email, password } = userData;
 
-    const users = await this.usersRepository.findAll();
-    const existingUser = users.find((u) => u.email === email);
+    const existingUser = await this.usersRepository.findUserByEmail(email);
 
     if (existingUser) {
       throw new Error(USERMESSAGES.USER_ALREADY_EXISTS);
     }
-
-    const userId = randomUUID();
     const passwordHash =
       await this.passwordGenerator.generatePasswordHash(password);
 
-    const newUser: User = {
-      id: userId,
+    const newUser: RegisterUserInput = {
       name,
       lastname,
       email,
       password: passwordHash,
     };
 
-    users.push(newUser);
-    await this.usersRepository.saveAll(users);
-
-    return { userId, name };
+    const addedUser = await this.usersRepository.addUser(newUser);
+    return { userId: addedUser.id, name: addedUser.name };
   }
 
   async loginUser(
     email: string,
     password: string,
   ): Promise<{ token: string; userEmail: string }> {
-    const users = await this.usersRepository.findAll();
-    const user = users.find((u) => u.email === email);
+    const user = await this.usersRepository.findUserByEmail(email);
 
     if (!user) {
       throw new Error(USERMESSAGES.USER_NOT_FOUND);
@@ -77,7 +71,7 @@ export class UserService {
 
     const token = jwt.sign(payload, secret, options);
 
-    return { token, userEmail: user.email };
+    return { token: token, userEmail: user.email };
   }
 
   async updateUserProfile(
@@ -85,18 +79,81 @@ export class UserService {
     name: string,
     lastname: string,
   ): Promise<{ name: string; lastname: string }> {
-    const users = await this.usersRepository.findAll();
-    const userIndex = users.findIndex((u) => u.email === email);
-
-    if (userIndex === -1) {
+    const updatedUser = await this.usersRepository.updateUser(
+      name,
+      lastname,
+      email,
+    );
+    if (updatedUser) {
       throw new Error(USERMESSAGES.USER_NOT_FOUND);
     }
-
-    users[userIndex].name = name;
-    users[userIndex].lastname = lastname;
-
-    await this.usersRepository.saveAll(users);
-
     return { name, lastname };
+  }
+
+  async getUsersWithFirstPostAndLikes(options: {
+    page?: number;
+    limit?: number;
+    sortBy?: 'name' | 'email';
+    sortOrder?: 'ASC' | 'DESC';
+    name?: string;
+    email?: string;
+  }) {
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'name',
+      sortOrder = 'ASC',
+      name,
+      email,
+    } = options;
+
+    const offset = (page - 1) * limit;
+
+    const allowedSort = ['name', 'email'];
+    const safeSortBy = allowedSort.includes(sortBy) ? sortBy : 'name';
+    const safeSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
+
+    const where: string[] = [];
+    const replacements: any = { limit, offset };
+
+    if (name) {
+      where.push('u.name LIKE :name');
+      replacements.name = `%${name}%`;
+    }
+
+    if (email) {
+      where.push('u.email LIKE :email');
+      replacements.email = `%${email}%`;
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    const sql = `
+    SELECT *
+    FROM (
+      SELECT
+        u.id,
+        u.name,
+        u.lastname,
+        u.email,
+        p.postId AS firstPostId,
+        p.title AS firstPostTitle,
+        JSON_LENGTH(p.likes) AS likesCount,
+        ROW_NUMBER() OVER (
+          PARTITION BY u.id
+          ORDER BY p.createdData
+        ) AS rn
+      FROM Users u
+      LEFT JOIN Posts p ON p.authorId = u.id
+      ${whereSql}
+    ) t
+    WHERE rn = 1
+    ORDER BY t.${safeSortBy} ${safeSortOrder}
+    LIMIT :limit OFFSET :offset
+  `;
+
+    const [rows] = await sequelize.query(sql, { replacements });
+
+    return rows;
   }
 }

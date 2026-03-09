@@ -1,27 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { FileHelpers } from '../common/fileHelpers';
-import type { User } from '../types/types';
+import { DataRepository } from '../common/dataRepository';
+import type { User as UserType, RegisterUserInput } from '../types/types';
 
 @Injectable()
 export class UsersRepository {
-  private readonly dataFile: string;
+  constructor(private readonly dataRepository: DataRepository) {}
 
-  constructor(
-    private readonly fileHelpers: FileHelpers,
-    private readonly configService: ConfigService,
-  ) {
-    this.dataFile = this.configService.get<string>('DATA_FILE', {
-      infer: true,
-    })!;
+  async addUser(user: RegisterUserInput): Promise<UserType> {
+    const newUser = await this.dataRepository.addUser(user);
+    return newUser;
+  }
+  async updateUser(
+    name: string,
+    lastname: string,
+    email: string,
+  ): Promise<boolean> {
+    return this.dataRepository.updateUser(name, lastname, email);
   }
 
-  findAll(): Promise<User[]> {
-    return this.fileHelpers.readFile<User[]>(this.dataFile);
+  async findUserByEmail(email: string): Promise<UserType | null> {
+    return this.dataRepository.findUserByEmail(email);
   }
 
-  saveAll(users: User[]): Promise<void> {
-    return this.fileHelpers.writeFile(this.dataFile, users);
+  async findUserById(id: string): Promise<UserType | null> {
+    return this.dataRepository.findUserById(id);
   }
 }
-

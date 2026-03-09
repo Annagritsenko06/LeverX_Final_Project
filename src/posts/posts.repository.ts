@@ -1,35 +1,45 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { FileHelpers } from '../common/fileHelpers';
-import type { Post, User } from '../types/types';
+import { DataRepository } from '../common/dataRepository';
+import type {
+  Post as PostType,
+  User as UserType,
+  CreatePostInput,
+} from '../types/types';
 
 @Injectable()
 export class PostsRepository {
-  private readonly postsFile: string;
-  private readonly usersFile: string;
+  constructor(private readonly fileHelpers: DataRepository) {}
 
-  constructor(
-    private readonly fileHelpers: FileHelpers,
-    private readonly configService: ConfigService,
-  ) {
-    this.postsFile = this.configService.get<string>('POSTS_FILE', {
-      infer: true,
-    })!;
-    this.usersFile = this.configService.get<string>('DATA_FILE', {
-      infer: true,
-    })!;
+  async addPost(post: CreatePostInput): Promise<PostType> {
+    return this.fileHelpers.addPost(post);
   }
 
-  findAllPosts(): Promise<Post[]> {
-    return this.fileHelpers.readFile<Post[]>(this.postsFile);
+  async updatePost(
+    postId: string,
+    title: string,
+    description: string,
+  ): Promise<PostType | null> {
+    return this.fileHelpers.updatePost(postId, title, description);
   }
 
-  saveAllPosts(posts: Post[]): Promise<void> {
-    return this.fileHelpers.writeFile(this.postsFile, posts);
+  async deletePost(postId: string): Promise<number> {
+    return this.fileHelpers.deletePost(postId);
+  }
+  async addLike(postId: string, userId: string): Promise<PostType | null> {
+    return this.fileHelpers.addLike(postId, userId);
   }
 
-  findAllUsers(): Promise<User[]> {
-    return this.fileHelpers.readFile<User[]>(this.usersFile);
+  async deleteLike(postId: string, userId: string): Promise<PostType | null> {
+    return this.fileHelpers.deleteLike(postId, userId);
+  }
+  async getAllPosts(authorId: string): Promise<PostType[]> {
+    return this.fileHelpers.getAllPosts(authorId);
+  }
+
+  async findPostById(
+    authorId: string,
+    postId: string,
+  ): Promise<PostType | null> {
+    return this.fileHelpers.findPostById(authorId, postId);
   }
 }
-

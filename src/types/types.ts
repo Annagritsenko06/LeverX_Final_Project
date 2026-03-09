@@ -16,9 +16,10 @@ export interface Post {
   postId: string;
   title: string;
   description: string;
-  createdData: Date | string;
-  updatedData?: Date | string;
+  createdData: Date;
+  updatedData?: Date;
   likes: string[];
+  User?: User;
 }
 
 export interface User {
@@ -30,6 +31,7 @@ export interface User {
 }
 
 export interface CreatePostInput {
+  authorId: string;
   title: string;
   description: string;
 }

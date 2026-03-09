@@ -4,16 +4,16 @@ import {
   Post,
   Get,
   Put,
-  Res,
   Req,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { Request } from 'express';
 import { UserService } from './users.service';
 import { BadRequestException } from '@nestjs/common';
 import { NotificationService } from '../notifications/notifications.service';
-import { USERMESSAGES} from '../common/messages';
+import { USERMESSAGES } from '../common/messages';
 import type { AuthRequest } from '../types/types';
 import { AuthGuard } from '../auth/auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -81,14 +81,28 @@ export class UserController {
     };
   }
 
-  @Get('auth-status')
+  @Get()
   @UseGuards(AuthGuard)
-  getAuthStatus(@Req() req: Request) {
-    const authReq = req as AuthRequest;
+  async getUsersWithFirstPostAndLikes(
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+    @Query('sortBy') sortBy: 'name' | 'email' = 'name',
+    @Query('sortOrder') sortOrder: 'ASC' | 'DESC' = 'ASC',
+    @Query('name') name?: string,
+    @Query('email') email?: string,
+  ) {
+    const data = await this.userService.getUsersWithFirstPostAndLikes({
+      page: Number(page),
+      limit: Number(limit),
+      sortBy,
+      sortOrder,
+      name,
+      email,
+    });
+
     return {
-      name: authReq.user.name,
-      lastname: authReq.user.lastname,
-      email: authReq.user.email,
+      success: true,
+      data,
     };
   }
 }

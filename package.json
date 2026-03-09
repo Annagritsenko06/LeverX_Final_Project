@@ -14,7 +14,7 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "prettier": "prettier --write .",
-    "backup": "node backupUsers.ts"
+    "migrate": "ts-node src/common/db/run-migrations.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -23,6 +23,8 @@
     "@nestjs/event-emitter": "^3.0.1",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.1",
+    "@sequelize/core": "^7.0.0-alpha.48",
+    "@sequelize/mysql": "^7.0.0-alpha.48",
     "@types/winston": "^2.4.4",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
@@ -30,6 +32,8 @@
     "nodemailer": "^8.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "umzug": "^3.8.2",
+    "uuid": "^13.0.0",
     "winston": "^3.19.0"
   },
   "devDependencies": {

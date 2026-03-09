@@ -6,26 +6,19 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import type { Request } from 'express';
 import type { AuthRequest, AuthUser, User } from '../types/types.js';
-import { FileHelpers } from '../common/fileHelpers';
-import { ConfigService } from '@nestjs/config';
+import { UsersRepository } from '../users/users.repository';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   private dataFile: string;
   constructor(
     private jwtService: JwtService,
-    private fileHelpers: FileHelpers,
-    private ConfigService: ConfigService,
-  ) {
-    this.dataFile = this.ConfigService.get<string>('DATA_FILE', {
-      infer: true,
-    })!;
-  }
+    private userRepository: UsersRepository,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const req = context.switchToHttp().getRequest<Request>();
+    const req = context.switchToHttp().getRequest<AuthRequest>();
 
     const authHeader = req.headers.authorization;
     const token = authHeader?.split(' ')[1];
@@ -38,7 +31,7 @@ export class AuthGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync<AuthUser>(token);
       const user = await this.validate(payload);
 
-      (req as AuthRequest).user = payload;
+      req.user = payload;
 
       return true;
     } catch {
@@ -46,9 +39,8 @@ export class AuthGuard implements CanActivate {
     }
   }
 
-  async validate(req: AuthUser): Promise<User> {
-    const users = await this.fileHelpers.readFile<User[]>(this.dataFile);
-    const existingUser = users.find((user) => user.id === req.id);
+  async validate(req: AuthUser): Promise<User | null> {
+    const existingUser = await this.userRepository.findUserById(req.id);
     if (!existingUser) {
       throw new UnauthorizedException('User doesnt exist');
     }

@@ -8,8 +8,9 @@ import {
   Param,
   Req,
   UseGuards,
+  Query,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { PostsService } from './posts.service';
 import { POSTSMESSAGES, MESSAGES } from '../common/messages';
 import type { AuthRequest } from '../types/types';
@@ -39,8 +40,21 @@ export class PostsController {
   }
 
   @Get(':userId')
-  async getUserPosts(@Param('userId') userId: string) {
-    const posts = await this.postsService.getUserPosts(userId);
+  async getUserPosts(
+    @Param('userId') userId: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+    @Query('sortBy') sortBy: 'createdData' | 'title' = 'createdData',
+    @Query('sortOrder') sortOrder: 'ASC' | 'DESC' = 'DESC',
+    @Query('title') title?: string,
+  ) {
+    const posts = await this.postsService.getUserPosts(userId, {
+      page: Number(page),
+      limit: Number(limit),
+      sortBy,
+      sortOrder,
+      title,
+    });
     return {
       success: true,
       posts,
@@ -64,7 +78,7 @@ export class PostsController {
       success: true,
       message: POSTSMESSAGES.POST_UPDATED,
       title: result.title,
-      updatedData: result.updatedDate,
+      updatedData: result.updatedData,
     };
   }
 
