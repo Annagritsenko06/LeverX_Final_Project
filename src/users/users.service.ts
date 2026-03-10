@@ -6,7 +6,6 @@ import { PasswordHashGenerator } from '../common/passwordHashGenerator';
 import { USERMESSAGES } from '../common/messages';
 import type { RegisterUserInput } from '../types/types';
 import { UsersRepository } from './users.repository';
-import { sequelize } from '../common/db/db';
 
 @Injectable()
 export class UserService {
@@ -98,62 +97,6 @@ export class UserService {
     name?: string;
     email?: string;
   }) {
-    const {
-      page = 1,
-      limit = 10,
-      sortBy = 'name',
-      sortOrder = 'ASC',
-      name,
-      email,
-    } = options;
-
-    const offset = (page - 1) * limit;
-
-    const allowedSort = ['name', 'email'];
-    const safeSortBy = allowedSort.includes(sortBy) ? sortBy : 'name';
-    const safeSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
-
-    const where: string[] = [];
-    const replacements: any = { limit, offset };
-
-    if (name) {
-      where.push('u.name LIKE :name');
-      replacements.name = `%${name}%`;
-    }
-
-    if (email) {
-      where.push('u.email LIKE :email');
-      replacements.email = `%${email}%`;
-    }
-
-    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
-
-    const sql = `
-    SELECT *
-    FROM (
-      SELECT
-        u.id,
-        u.name,
-        u.lastname,
-        u.email,
-        p.postId AS firstPostId,
-        p.title AS firstPostTitle,
-        JSON_LENGTH(p.likes) AS likesCount,
-        ROW_NUMBER() OVER (
-          PARTITION BY u.id
-          ORDER BY p.createdData
-        ) AS rn
-      FROM Users u
-      LEFT JOIN Posts p ON p.authorId = u.id
-      ${whereSql}
-    ) t
-    WHERE rn = 1
-    ORDER BY t.${safeSortBy} ${safeSortOrder}
-    LIMIT :limit OFFSET :offset
-  `;
-
-    const [rows] = await sequelize.query(sql, { replacements });
-
-    return rows;
+    return await this.usersRepository.getUsersWithFirstPostAndLikes(options);
   }
 }

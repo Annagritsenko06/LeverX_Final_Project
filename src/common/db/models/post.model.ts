@@ -10,6 +10,7 @@ import {
   PrimaryKey,
   NotNull,
   Default,
+  BelongsTo,
 } from '@sequelize/core/decorators-legacy';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './user.model';
@@ -18,7 +19,7 @@ export class Post extends Model<
   InferCreationAttributes<Post>
 > {
   @Attribute(DataTypes.UUID)
-  declare authorId: CreationOptional<string>;
+  declare authorId: string;
 
   @PrimaryKey
   @Attribute(DataTypes.UUID)
@@ -43,5 +44,5 @@ export class Post extends Model<
   @Default(DataTypes.NOW)
   declare updatedData: CreationOptional<Date>;
 
-  declare User?: User;
+  declare user?: User;
 }

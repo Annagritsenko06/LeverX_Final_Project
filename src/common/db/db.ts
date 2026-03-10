@@ -1,14 +1,14 @@
 import { Sequelize } from '@sequelize/core';
 import { MySqlDialect } from '@sequelize/mysql';
-import { Post } from '../models/post.model';
-import { User } from '../models/user.model';
-import { setupAssociations } from '../models/associations';
+import { Post } from './models/post.model';
+import 'dotenv/config';
+import { User } from './models/user.model';
 
 export const sequelize = new Sequelize({
   dialect: MySqlDialect,
   database: 'applicationdb',
-  user: 'Anna',
-  password: 'Super_star7310013',
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
   host: 'localhost',
   port: 3306,
   define: {
@@ -17,6 +17,5 @@ export const sequelize = new Sequelize({
 });
 
 sequelize.addModels([User, Post]);
-setupAssociations();
 
 export default sequelize;

@@ -4,7 +4,6 @@ import { UserController } from './users/users.controller';
 import { PostsController } from './posts/posts.controller';
 import { UserService } from './users/users.service';
 import { PostsService } from './posts/posts.service';
-import { DataRepository } from './common/dataRepository';
 import { NotificationService } from './notifications/notifications.service';
 import { AuthGuard } from './auth/auth.service';
 import { ConfigModule } from '@nestjs/config';
@@ -25,7 +24,6 @@ import { PostsRepository } from './posts/posts.repository';
   providers: [
     UserService,
     PostsService,
-    DataRepository,
     NotificationService,
     AuthGuard,
     PasswordHashGenerator,

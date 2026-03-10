@@ -10,15 +10,17 @@ import {
   PrimaryKey,
   NotNull,
   Default,
+  HasMany,
 } from '@sequelize/core/decorators-legacy';
 import { v4 as uuidv4 } from 'uuid';
+import { Post } from './post.model';
 
 export class User extends Model<
   InferAttributes<User>,
   InferCreationAttributes<User>
 > {
   @PrimaryKey
-  @Attribute(DataTypes.UUIDV4)
+  @Attribute(DataTypes.UUID)
   @Default(uuidv4)
   declare id: CreationOptional<string>;
 
@@ -36,4 +38,9 @@ export class User extends Model<
   @NotNull
   @Attribute(DataTypes.STRING(100))
   declare password: string;
+
+  @HasMany(() => Post, {
+    foreignKey: 'authorId',
+  })
+  declare Post?: Post[];
 }
