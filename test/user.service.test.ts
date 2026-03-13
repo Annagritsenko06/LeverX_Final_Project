@@ -3,7 +3,6 @@ import assert from 'node:assert';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from '../dist/users/users.service.js';
 import { UsersRepository } from '../dist/users/users.repository.js';
-import { PasswordHashGenerator } from '../dist/common/passwordHashGenerator.js'; 
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
@@ -17,15 +16,9 @@ test('UserService', async (t) => {
     let service: UserService;
     let module: TestingModule;
     let mockUserRepository: any;
-    let mockPasswordHashGenerator: any;
 
     before(async () => {
-        mockPasswordHashGenerator = {
-            generatePasswordHash: mock.fn(async (password: string) => {
-                return `hashed_${password}`;
-            })
-        };
-
+       
         mockUserRepository = {
             findUserByEmail: mock.fn(async (email: string) => {
                 return null;
@@ -49,11 +42,7 @@ test('UserService', async (t) => {
                 {
                     provide: UsersRepository,
                     useValue: mockUserRepository,
-                },
-                {
-                    provide: PasswordHashGenerator,
-                    useValue: mockPasswordHashGenerator,
-                },
+                }
             ],
         }).compile();
         
@@ -62,20 +51,16 @@ test('UserService', async (t) => {
 beforeEach(() => {
         mockUserRepository.findUserByEmail.mock.resetCalls?.();
         mockUserRepository.addUser.mock.resetCalls?.();
-        mockPasswordHashGenerator.generatePasswordHash.mock.resetCalls?.();
     });
     await t.test('should register user successfully', async () => {
        
-
         const result = await service.registerUser(userData);
 
         assert.ok(result.userId);
         assert.strictEqual(result.name, userData.name);
 
         assert.strictEqual(mockUserRepository.findUserByEmail.mock.calls.length, 1);
-        
-        assert.strictEqual(mockPasswordHashGenerator.generatePasswordHash.mock.calls.length, 1);
-        
+                
         assert.strictEqual(mockUserRepository.addUser.mock.calls.length, 1);
         const savedUserData = mockUserRepository.addUser.mock.calls[0].arguments[0];
         assert.strictEqual(savedUserData.password, `hashed_${userData.password}`);

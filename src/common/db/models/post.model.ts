@@ -19,6 +19,7 @@ export class Post extends Model<
   InferCreationAttributes<Post>
 > {
   @Attribute(DataTypes.UUID)
+    @Default(uuidv4)
   declare authorId: string;
 
   @PrimaryKey
