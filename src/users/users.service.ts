@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
-import { randomUUID } from 'crypto';
 import bcrypt from 'bcrypt';
-import { PasswordHashGenerator } from '../common/passwordHashGenerator';
-import { USERMESSAGES } from '../common/messages';
-import type { RegisterUserInput } from '../types/types';
-import { UsersRepository } from './users.repository';
+import { PasswordHashGenerator } from '../common/passwordHashGenerator.js';
+import { USERMESSAGES } from '../common/messages.js';
+import type { RegisterUserInput } from '../types/types.js';
+import { UsersRepository } from './users.repository.js';
 
 @Injectable()
 export class UserService {
@@ -83,7 +82,7 @@ export class UserService {
       lastname,
       email,
     );
-    if (updatedUser) {
+    if (!updatedUser) {
       throw new Error(USERMESSAGES.USER_NOT_FOUND);
     }
     return { name, lastname };

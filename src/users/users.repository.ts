@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import type { User as UserType, RegisterUserInput } from '../types/types';
-import { sequelize } from '../common/db/db';
-import { User } from '../common/db/models/user.model';
+import type { User as UserType, RegisterUserInput } from '../types/types.ts';
+import { sequelize } from '../common/db/db.js';
+import { User } from '../common/db/models/user.model.js';
 
 @Injectable()
 export class UsersRepository {
@@ -15,6 +15,7 @@ export class UsersRepository {
 
     return createdUser.toJSON() as UserType;
   }
+
   async updateUser(
     name: string,
     lastname: string,

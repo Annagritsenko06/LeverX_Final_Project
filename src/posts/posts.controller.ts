@@ -11,19 +11,28 @@ import {
   Query,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { PostsService } from './posts.service';
-import { POSTSMESSAGES, MESSAGES } from '../common/messages';
-import type { AuthRequest } from '../types/types';
-import { AuthGuard } from '../auth/auth.service';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
+import { PostsService } from './posts.service.js';
+import { POSTSMESSAGES, MESSAGES } from '../common/messages.js';
+import type { AuthRequest } from '../types/types.js';
+import { AuthGuard } from '../auth/auth.service.js';
+import { CreatePostDto } from './dto/create-post.dto.js';
+import { UpdatePostDto } from './dto/update-post.dto.js';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
+@ApiTags('posts')
+@ApiBearerAuth()
 @Controller('posts')
 @UseGuards(AuthGuard)
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Post('/')
+  @ApiOperation({ summary: 'Create post' })
   async createPost(@Req() req: Request, @Body() postBody: CreatePostDto) {
     const authReq = req as AuthRequest;
     const result = await this.postsService.createPost(
@@ -40,6 +49,7 @@ export class PostsController {
   }
 
   @Get(':userId')
+  @ApiOperation({ summary: 'Get posts of user' })
   async getUserPosts(
     @Param('userId') userId: string,
     @Query('page') page = '1',
@@ -62,6 +72,7 @@ export class PostsController {
   }
 
   @Put(':postId')
+  @ApiOperation({ summary: 'Update post' })
   async updatePost(
     @Req() req: Request,
     @Param('postId') postId: string,
@@ -83,6 +94,7 @@ export class PostsController {
   }
 
   @Delete(':postId')
+  @ApiOperation({ summary: 'Delete post' })
   async deletePost(@Req() req: Request, @Param('postId') postId: string) {
     const authReq = req as AuthRequest;
     await this.postsService.deletePost(postId, authReq.user.id);
@@ -94,6 +106,7 @@ export class PostsController {
   }
 
   @Post(':postId/like')
+  @ApiOperation({ summary: 'Set like to post' })
   async likePost(@Req() req: Request, @Param('postId') postId: string) {
     const authReq = req as AuthRequest;
     await this.postsService.likePost(postId, authReq.user.id);
@@ -105,6 +118,7 @@ export class PostsController {
   }
 
   @Delete(':postId/like')
+  @ApiOperation({ summary: 'Remove like from post' })
   async unlikePost(@Req() req: Request, @Param('postId') postId: string) {
     const authReq = req as AuthRequest;
     await this.postsService.unlikePost(postId, authReq.user.id);

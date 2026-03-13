@@ -13,7 +13,7 @@ import {
   BelongsTo,
 } from '@sequelize/core/decorators-legacy';
 import { v4 as uuidv4 } from 'uuid';
-import { User } from './user.model';
+import { User } from './user.model.js';
 export class Post extends Model<
   InferAttributes<Post>,
   InferCreationAttributes<Post>

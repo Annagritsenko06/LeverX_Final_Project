@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { Post as PostType, CreatePostInput } from '../types/types';
-import { Post } from '../common/db/models/post.model';
-import { POSTSMESSAGES } from '../common/messages';
-import { User } from '../common/db/models/user.model';
+import type { Post as PostType, CreatePostInput } from '../types/types.ts';
+import { Post } from '../common/db/models/post.model.js';
+import { POSTSMESSAGES } from '../common/messages.js';
+import { User } from '../common/db/models/user.model.js';
 
 @Injectable()
 export class PostsRepository {
@@ -90,7 +90,7 @@ export class PostsRepository {
     }
 
     const likes = post?.likes ?? [];
-    const updatedLikes = likes.filter((like) => userId != userId);
+    const updatedLikes = likes.filter((like) => like != userId);
     await post.update({
       likes: updatedLikes,
     });

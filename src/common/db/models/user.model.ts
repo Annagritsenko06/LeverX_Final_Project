@@ -13,7 +13,7 @@ import {
   HasMany,
 } from '@sequelize/core/decorators-legacy';
 import { v4 as uuidv4 } from 'uuid';
-import { Post } from './post.model';
+import { Post } from './post.model.js';
 
 export class User extends Model<
   InferAttributes<User>,

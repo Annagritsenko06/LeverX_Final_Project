@@ -11,7 +11,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { catchError } from 'rxjs/operators';
-import { USERMESSAGES, POSTSMESSAGES, MESSAGES } from '../messages';
+import { USERMESSAGES, POSTSMESSAGES, MESSAGES } from '../messages.js';
 import { DatabaseError } from '@sequelize/core';
 
 @Injectable()

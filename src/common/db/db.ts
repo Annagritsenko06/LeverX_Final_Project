@@ -1,8 +1,8 @@
 import { Sequelize } from '@sequelize/core';
 import { MySqlDialect } from '@sequelize/mysql';
-import { Post } from './models/post.model';
+import { Post } from './models/post.model.js';
 import 'dotenv/config';
-import { User } from './models/user.model';
+import { User } from './models/user.model.js';
 
 export const sequelize = new Sequelize({
   dialect: MySqlDialect,

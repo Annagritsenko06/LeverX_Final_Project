@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { POSTSMESSAGES, MESSAGES } from '../common/messages';
-import type { CreatePostInput, UserPostDto } from '../types/types';
-import { PostsRepository } from './posts.repository';
+import { POSTSMESSAGES, MESSAGES } from '../common/messages.js';
+import type { UserPostDto } from '../types/types.js';
+import { PostsRepository } from './posts.repository.js';
 
 @Injectable()
 export class PostsService {
