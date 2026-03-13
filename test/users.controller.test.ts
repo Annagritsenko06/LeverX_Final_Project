@@ -58,7 +58,7 @@ test('POST /users/login should login user', async () => {
 test('PUT /users/profile should update profile', async () => {
   const res = await request(app.getHttpServer())
       .put('/users/profile')
-    .set('Authorization', token)
+     .set('Authorization', token)
     .send({
       name: 'Anna',
       lastname: 'Gritsenko',
@@ -66,7 +66,7 @@ test('PUT /users/profile should update profile', async () => {
 
   assert.equal(res.status, 200);
   assert.equal(res.body.success, true);
-  assert.equal(res.body.NewuserName, 'Anna');
+  assert.equal(res.body.name, 'Anna');
 });
 
 

@@ -1,10 +1,10 @@
-import { test, beforeEach, mock, before } from 'node:test';
+import { test, beforeEach, mock, before} from 'node:test';
 import { Test, TestingModule } from '@nestjs/testing';
 import assert from 'node:assert/strict';
 import { v4 as uuidv4 } from 'uuid';
 import { POSTSMESSAGES } from '../dist/common/messages.js';
 import { PostsService } from '../dist/posts/posts.service.js';
-import { PostsRepository } from '../dist/posts/posts.repository.js';
+import { PostsRepository } from '../dist/posts/posts.repository.js'; 
 
 const fakePost = {
   postId: uuidv4(),
@@ -13,14 +13,44 @@ const fakePost = {
   description: "This is a test post",
   likes: ["user2"],
   createdData: new Date(),
-  updatedData: new Date(),
-  User: { name: "Anna", lastname: "Smith" }
+  updatedData: new Date()
 };
+export interface User {
+  id: string;
+  name: string;
+  lastname: string;
+  email: string;
+  password: string;
+}
+export interface Post {
+  authorId: string;
+  postId: string;
+  title: string;
+  description: string;
+  createdData: Date;
+  updatedData?: Date;
+  likes: string[];
+  User?: User;
+}
 
 test('PostsService', async (t) => {
   let postsService: PostsService;
   let module: TestingModule;
-  let mockPostRepository: any;
+
+ interface IPostRepository 
+  {
+  addPost(post: { authorId: string; title: string; description: string }): Promise<Post>;
+  updatePost(postId: string, title: string, description: string): Promise<Post | null>;
+  findPostById(authorId: string, postId: string): Promise<Post | null>;
+  deletePost(postId: string): Promise<number>;
+  getAllPosts(): Promise<[]>;
+  addLike(postId: string, userId: string): Promise<Post>;
+  deleteLike(postId: string, userId: string): Promise<Post>;
+}
+ 
+let mockPostRepository: {
+  [K in keyof IPostRepository]: ReturnType<typeof mock.fn>;
+};
 
   before(async () => {
     mockPostRepository = {
@@ -37,9 +67,9 @@ test('PostsService', async (t) => {
             authorId: this.authorId,
             title: this.title,
             description: this.description,
-            likes: this.likes,
             createdData: this.createdData,
-            updatedData: this.updatedData
+            updatedData: this.updatedData,
+            likes: this.likes
           };
         }
       })),
@@ -55,7 +85,7 @@ test('PostsService', async (t) => {
         return null;
       }),
       deletePost: mock.fn(async (postId: string) => postId === fakePost.postId ? 1 : 0),
-      getAllPosts: mock.fn(async (authorId: string) => authorId === fakePost.authorId ? [fakePost] : []),
+      getAllPosts: mock.fn(async () => []),
       addLike: mock.fn(async (postId: string, userId: string) => {
         if (postId !== fakePost.postId) throw new Error(POSTSMESSAGES.POST_NOT_FOUND);
         if (!fakePost.likes.includes(userId)) fakePost.likes.push(userId);
@@ -78,15 +108,6 @@ test('PostsService', async (t) => {
     postsService = module.get<PostsService>(PostsService);
   });
 
-  beforeEach(() => {
-    mockPostRepository.addPost.mock.resetCalls?.();
-    mockPostRepository.updatePost.mock.resetCalls?.();
-    mockPostRepository.findPostById.mock.resetCalls?.();
-    mockPostRepository.deletePost.mock.resetCalls?.();
-    mockPostRepository.getAllPosts.mock.resetCalls?.();
-    mockPostRepository.addLike.mock.resetCalls?.();
-    mockPostRepository.deleteLike.mock.resetCalls?.();
-  });
 
   await t.test('should create post successfully', async () => {
     const result = await postsService.createPost("user1", { title: "My post", description: "desc" });
@@ -118,7 +139,7 @@ test('PostsService', async (t) => {
 
   await t.test('should update post', async () => {
     const updated = { title: "New title", description: "desc", updatedData: new Date() };
-    mockPostRepository.updatePost.mock.mockImplementation(async () =>updated);
+     mockPostRepository.updatePost.mock.mockImplementation(async () =>updated);
 
     const result = await postsService.updatePost(fakePost.postId, "user1", { title: "New title", description: "desc" });
     assert.strictEqual(result.title, "New title");
@@ -173,7 +194,7 @@ test('PostsService', async (t) => {
     { title: "Post1", description: "desc", createdData: new Date('2026-03-10'), User: { name: "A", lastname: "B" } },
     { title: "Post2", description: "desc", createdData: new Date('2026-03-11'), User: { name: "C", lastname: "D" } },
   ];
-  mockPostRepository.getAllPosts.mock.mockImplementation(async () =>posts);
+   mockPostRepository.getAllPosts.mock.mockImplementation(async () =>posts);
 
   const result = await postsService.getUserPosts("user1");
   assert.strictEqual(result[0].title, "Post2"); 
