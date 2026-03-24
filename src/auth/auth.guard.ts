@@ -6,12 +6,11 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import type { AuthRequest, AuthUser, User } from '../types/types.js';
-import { UsersRepository } from '../users/users.repository.js';
+import type { AuthRequest, AuthUser, User } from '../types/types';
+import { UsersRepository } from '../users/users.repository';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  private dataFile: string;
   constructor(
     private jwtService: JwtService,
     private userRepository: UsersRepository,
@@ -29,10 +28,8 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync<AuthUser>(token);
-      const user = await this.validate(payload);
-
+      await this.validate(payload);
       req.user = payload;
-
       return true;
     } catch {
       throw new ForbiddenException('Token expired');
@@ -40,9 +37,15 @@ export class AuthGuard implements CanActivate {
   }
 
   async validate(req: AuthUser): Promise<User | null> {
-    const existingUser = await this.userRepository.findUserById(req.id);
+    const existingUser = await this.userRepository.findUserByGoogleSub(
+      req.googleSub,
+    );
     if (!existingUser) {
       throw new UnauthorizedException('User doesnt exist');
+    }
+
+    if (req.sessionVersion !== existingUser.sessionVersion) {
+      throw new UnauthorizedException('Token outdated - please login again');
     }
     return existingUser;
   }

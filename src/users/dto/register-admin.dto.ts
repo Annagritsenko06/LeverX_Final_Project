@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class RegisterUserDto {
+export class RegisterAdminDto {
   @ApiProperty({ minLength: 2, maxLength: 50 })
   @IsString()
   @IsNotEmpty()
@@ -22,14 +22,11 @@ export class RegisterUserDto {
   @MaxLength(50)
   lastname: string;
 
-  @ApiProperty({ example: 'user@example.com' })
+  @ApiProperty({ example: 'admin@example.com' })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ minLength: 6, maxLength: 100 })
+  @ApiProperty({ default: 'admin' })
   @IsString()
-  @IsNotEmpty()
-  @MinLength(6)
-  @MaxLength(100)
-  password: string;
+  roleId: string;
 }

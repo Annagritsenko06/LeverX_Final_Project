@@ -3,44 +3,67 @@ import {
   Model,
   InferAttributes,
   InferCreationAttributes,
+  CreationOptional,
+  Sequelize,
 } from '@sequelize/core';
-import type { CreationOptional } from '@sequelize/core';
-import {
-  Attribute,
-  PrimaryKey,
-  NotNull,
-  Default,
-  HasMany,
-} from '@sequelize/core/decorators-legacy';
-import { v4 as uuidv4 } from 'uuid';
-import { Post } from './post.model.js';
 
 export class User extends Model<
   InferAttributes<User>,
   InferCreationAttributes<User>
 > {
-  @PrimaryKey
-  @Attribute(DataTypes.UUID)
-  @Default(uuidv4)
   declare id: CreationOptional<string>;
-
-  @NotNull
-  @Attribute(DataTypes.STRING(100))
+  declare roleId: CreationOptional<string>;
   declare name: string;
-
-  @Attribute(DataTypes.STRING(100))
   declare lastname: string;
-
-  @NotNull
-  @Attribute(DataTypes.STRING(100))
   declare email: string;
+  declare googleSub?: string;
+  declare birthdate?: CreationOptional<Date>;
+  declare avatar?: string;
+  declare sessionVersion?: CreationOptional<number>;
+}
 
-  @NotNull
-  @Attribute(DataTypes.STRING(100))
-  declare password: string;
-
-  @HasMany(() => Post, {
-    foreignKey: 'authorId',
-  })
-  declare Post?: Post[];
+export function initUserModel(sequelize: Sequelize) {
+  User.init(
+    {
+      id: {
+        type: DataTypes.UUID,
+        primaryKey: true,
+        defaultValue: DataTypes.UUIDV4,
+      },
+      roleId: {
+        type: DataTypes.STRING,
+        defaultValue: 'user',
+      },
+      name: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+      },
+      lastname: {
+        type: DataTypes.STRING(100),
+      },
+      email: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+      },
+      googleSub: {
+        type: DataTypes.STRING,
+      },
+      birthdate: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
+      avatar: {
+        type: DataTypes.STRING,
+      },
+      sessionVersion: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+      },
+    },
+    {
+      sequelize,
+      tableName: 'users',
+      timestamps: false,
+    },
+  );
 }

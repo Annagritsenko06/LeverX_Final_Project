@@ -1,285 +1,288 @@
-import { test, before, mock , beforeEach} from 'node:test';
-import assert from 'node:assert';
-import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from '../dist/users/users.service.js';
-import { UsersRepository } from '../dist/users/users.repository.js';
-import { v4 as uuidv4 } from 'uuid'; 
-import { PasswordHashGenerator } from '../dist/common/passwordHashGenerator.js';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import { test, mock } from 'node:test';
+import assert from 'node:assert/strict';
+import { UserService } from '../src/users/users.service';
+import type { UsersRepository } from '../src/users/users.repository';
+import type { LoggerService } from '../src/common/logger';
+import type { ConfigService } from '@nestjs/config';
+import type { User, RegisterUserInput } from '../src/types/types';
 
- const userData = {
-            name: "Anna",
-            lastname: "Gritsenko",
-            email: "email@test.com",
-            password: "password123"
-        };
- 
+type MockUser = User & { sessionVersion: number };
 
-export interface User {
-  id: string;
-  name: string;
-  lastname: string;
-  email: string;
-  password: string;
-}
+const mockLogger = {
+  log: mock.fn((_msg: string, _meta?: object) => undefined),
+  error: mock.fn((_msg: string) => undefined),
+  warn: mock.fn((_msg: string) => undefined),
+} satisfies Partial<LoggerService>;
 
-test('UserService', async (t) => {
-    let service: UserService;
-    let module: TestingModule;
+const mockConfigService = {
+  get: mock.fn((key: string): string | undefined => {
+    if (key === 'JWT_SECRET') return 'test-secret';
+    if (key === 'JWT_EXPIRES_IN') return '1d';
+    return undefined;
+  }),
+} satisfies Partial<ConfigService>;
 
-interface IUserRepository {
-  findUserByEmail(email: string): Promise<User | null>;
-  addUser(userData: any): Promise<User>;
-  updateUser(name?: string, lastname?: string, email?: string): Promise<boolean>;
-   getUsersWithFirstPostAndLikes(options:any) :  Promise<unknown[]> ;
-}
-
-let mockUserRepository: {
-  [K in keyof IUserRepository]: ReturnType<typeof mock.fn>;
+const userData: RegisterUserInput = {
+  name: 'Anna',
+  lastname: 'Gritsenko',
+  email: 'anna@test.com',
+  roleId: 'user',
 };
 
-    before(async () => {
-       
-        mockUserRepository = {
-            findUserByEmail: mock.fn(async (email: string) => {
-                return null;
-            }),
-            addUser: mock.fn(async (userData: any) => ({
-                id: uuidv4(),
-                ...userData,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            })),
-             updateUser: mock.fn(async (name: string, lastname: string, email: string) => {
-    return true;
-  }),
-  getUsersWithFirstPostAndLikes : mock.fn(async (): Promise<unknown[]> => []),
+const existingUser: MockUser = {
+  id: 'user-id',
+  name: 'Anna',
+  lastname: 'Gritsenko',
+  email: 'anna@test.com',
+  roleId: 'user',
+  googleSub: '',
+  sessionVersion: 0,
+};
 
-         };
+function makeMockRepo() {
+  return {
+    findUserByEmail: mock.fn((_email: string) =>
+      Promise.resolve<MockUser | null>(null),
+    ),
+    addUser: mock.fn((data: RegisterUserInput) =>
+      Promise.resolve<MockUser>({
+        id: 'new-id',
+        name: data.name,
+        lastname: data.lastname ?? '',
+        email: data.email,
+        roleId: data.roleId ?? 'user',
+        googleSub: '',
+        sessionVersion: 0,
+      }),
+    ),
+    updateUser: mock.fn(
+      (_n: string, _l: string, _e: string, _b: Date, _a: string) =>
+        Promise.resolve<boolean>(true),
+    ),
+    findUserByGoogleSub: mock.fn((_sub: string) =>
+      Promise.resolve<MockUser | null>(null),
+    ),
+    updateUserByGoogleSub: mock.fn((_sub: string, _data: Partial<User>) =>
+      Promise.resolve<MockUser | null>(null),
+    ),
+    updateUserByEmail: mock.fn((_email: string, _data: Partial<User>) =>
+      Promise.resolve<MockUser | null>(null),
+    ),
+    updateUserGoogleSub: mock.fn((_id: string, _sub: string) =>
+      Promise.resolve<MockUser | null>(null),
+    ),
+    deleteUser: mock.fn((_email: string) => Promise.resolve<number>(1)),
+    updateSessionVersion: mock.fn((_id: string, _v: number) =>
+      Promise.resolve<boolean>(true),
+    ),
+    findUserProfileByEmail: mock.fn((_email: string) =>
+      Promise.resolve<{ toJSON: () => MockUser } | null>(null),
+    ),
+  };
+}
 
-        module = await Test.createTestingModule({
-            providers: [
-                UserService,
-                {
-                    provide: UsersRepository,
-                    useValue: mockUserRepository,
-                },
-                 {
-      provide: PasswordHashGenerator,  
-      useClass: PasswordHashGenerator,
-    },
-            ],
-        }).compile();
-        
-        service = module.get<UserService>(UserService);
-    });
-    
-beforeEach(() => {
-        mockUserRepository.findUserByEmail.mock.resetCalls?.();
-        mockUserRepository.addUser.mock.resetCalls?.();
-    });
-    await t.test('should register user successfully', async () => {
-       
-        const result = await service.registerUser(userData);
+type MockRepo = ReturnType<typeof makeMockRepo>;
 
-        assert.ok(result.userId);
-        assert.strictEqual(result.name, userData.name);
-
-        assert.strictEqual(mockUserRepository.findUserByEmail.mock.calls.length, 1);
-                
-        assert.strictEqual(mockUserRepository.addUser.mock.calls.length, 1);
-     const calls = mockUserRepository.addUser.mock.calls;
-    if (calls.length > 0 && calls[0] && calls[0][0]) {
-        const savedUserData = calls[0][0] as any;
-        assert.ok(savedUserData.password.startsWith('$2b$')); 
-    }});
-await t.test('registerUser accepts empty name (controller validates)', async () => {
-  const result = await service.registerUser({ ...userData, name: '' });
-  assert.ok(result.userId, 'Service processes empty name');
-  assert.strictEqual(result.name, '');
-});
-
-await t.test('registerUser accepts invalid email (controller validates)', async () => {
-  const result = await service.registerUser({ ...userData, email: 'invalid' });
-  assert.ok(result.userId, 'Service processes invalid email');
-  assert.strictEqual(result.name, userData.name);
-});
-
-
-    await t.test('should throw error if user already exists', async () => {
-        mockUserRepository.findUserByEmail.mock.resetCalls();
-        
-           mockUserRepository.findUserByEmail = mock.fn(async (email: string) => {
-            return {
-                id: uuidv4(),
-                name: userData.name,
-                lastname: userData.lastname,
-                email: email,
-                password: "hashed_password",
-                toJSON: function() {
-                    return {
-                        id: this.id,
-                        name: this.name,
-                        lastname: this.lastname,
-                        email: this.email,
-                        password: this.password
-                    };
-                }
-            };
-        });
-
-               try {
-            await service.registerUser(userData);
-            assert.fail('Should have thrown an error');
-        } catch (error) {
-            assert.strictEqual(error.message, 'User already exists');
-        }
-
-        assert.strictEqual(mockUserRepository.addUser.mock.calls.length, 0);
-    });
-
-
-
-    await t.test('should login user successfully', async () => {
-
-    mockUserRepository.findUserByEmail.mock.mockImplementation(async () => ({
-      id: "1",
-      name: "Anna",
-      lastname: "Gritsenko",
-      email: userData.email,
-      password: "hashed_password"
-    }));
-
-    mock.method(bcrypt, 'compare', async () => true);
-
-    mock.method(jwt, 'sign', () => "fake-jwt-token");
-
-    process.env.JWT_SECRET = "secret";
-
-    const result = await service.loginUser(userData.email, userData.password);
-
-    assert.equal(result.token, "fake-jwt-token");
-    assert.equal(result.userEmail, userData.email);
-    
-        assert.strictEqual(mockUserRepository.findUserByEmail.mock.calls.length, 1);
-  });
-
-
-  await t.test('should throw error because of wrong parameters', async () => {
-  mockUserRepository.findUserByEmail.mock.mockImplementation(async () => null);
-  
-  await assert.rejects(
-    () => service.loginUser('', userData.password), 
-    {
-      message: 'User not found' 
-    }
-  ); 
-  await assert.rejects(
-    () => service.loginUser(userData.email, ''), 
-    {
-      message: 'User not found' 
-    }
+function buildService(repo: MockRepo): UserService {
+  return new UserService(
+    repo as unknown as UsersRepository,
+    mockLogger as unknown as LoggerService,
+    mockConfigService as unknown as ConfigService,
   );
+}
 
-  });
+void test('registerUser: happy path — creates new user', async () => {
+  const repo = makeMockRepo();
+  const service = buildService(repo);
 
+  const result = await service.registerUser(userData);
 
-
-  await t.test('should throw error if user not found', async () => {
-
-    mockUserRepository.findUserByEmail.mock.mockImplementation(async () => null);
-
-    await assert.rejects(
-      () => service.loginUser(userData.email, userData.password),
-      {
-        message: 'User not found'
-      }
-    );
-  });
-
-
-  await t.test('should throw error if password incorrect', async () => {
-
-    mockUserRepository.findUserByEmail.mock.mockImplementation(async () => ({
-      id: "1",
-      name: userData.name,
-      lastname: userData.lastname,
-      email: userData.email,
-      password: "hashed"
-    }));
-
-    mock.method(bcrypt, 'compare', async () => false);
-
-    await assert.rejects(
-      () => service.loginUser(userData.email, userData.password),
-      {
-        message: 'Wrong password'
-      }
-    );
-  });
-
-
-  await t.test('should update profile', async () => {
-
-    mockUserRepository.updateUser.mock.mockImplementation(async () => true);
-
-    const result = await service.updateUserProfile(
-      userData.email,
-      "NewName",
-      "NewLastname"
-    );
-
-    assert.equal(result.name, "NewName");
-    assert.equal(result.lastname, "NewLastname");
-    
-  });
-
-  
-await t.test('should throw error if user not found on update', async () => {
-   mockUserRepository.updateUser = mock.fn(async (name?: string, lastname?: string, email?: string) => {
-    return false;
-  });
-
-  await assert.rejects(
-    () => service.updateUserProfile(userData.email, "NewName", "NewLastname"),
-    { message: 'User not found' }
+  assert.strictEqual(result.userId, 'new-id');
+  assert.strictEqual(result.name, 'Anna');
+  assert.strictEqual(repo.findUserByEmail.mock.calls.length, 1);
+  assert.strictEqual(
+    repo.findUserByEmail.mock.calls[0].arguments[0],
+    userData.email,
+  );
+  assert.strictEqual(repo.addUser.mock.calls.length, 1);
+  assert.strictEqual(
+    repo.addUser.mock.calls[0].arguments[0].email,
+    userData.email,
   );
 });
 
-await t.test('should return users with posts', async () => {
-  const mockUsersWithPosts = [
-    { id: 'user1', name: 'Anna', lastname: 'Gritz', email: 'anna@gmail.com', firstPostId: 'post1', firstPostTitle: 'Anna post', likesCount: 5 },
-    { id: 'user2', name: 'Mila', lastname: 'Lilili', email: 'milka_super@mail.ru', firstPostId: 'post2', firstPostTitle: 'Milka post', likesCount: 2 }
-  ];
- 
-  mockUserRepository.getUsersWithFirstPostAndLikes = mock.fn(async (options: any) => {
-    if (options.name === 'ann') return [mockUsersWithPosts[0]];
-    if (options.sortBy === 'email' && options.sortOrder === 'DESC') return [...mockUsersWithPosts].reverse();
-    return mockUsersWithPosts;
-  });
+void test('registerUser: throws if user already exists', async () => {
+  const repo = makeMockRepo();
+  repo.findUserByEmail = mock.fn((_email: string) =>
+    Promise.resolve<MockUser | null>(existingUser),
+  );
+  const service = buildService(repo);
 
-  const result: any[] = await service.getUsersWithFirstPostAndLikes({
-    page: 1, limit: 10, sortBy: 'name', sortOrder: 'ASC'
+  await assert.rejects(() => service.registerUser(userData), {
+    message: 'User already exists',
   });
-
-  assert.strictEqual(result.length, 2);
-  assert.strictEqual(result[0].name, 'Anna');
-  assert.strictEqual(result[0].likesCount, 5);
+  assert.strictEqual(repo.addUser.mock.calls.length, 0);
 });
 
+void test('generateToken: returns token and userEmail for existing user', async () => {
+  const repo = makeMockRepo();
+  repo.findUserByEmail = mock.fn((_email: string) =>
+    Promise.resolve<MockUser | null>(existingUser),
+  );
+  const service = buildService(repo);
 
-await t.test('getUsersWithFirstPostAndLikes - edge pagination', async () => {
-  mockUserRepository.getUsersWithFirstPostAndLikes.mock.mockImplementation(async (options) => {
-    if (options.limit === 0) throw new Error('Invalid limit');
-    if (options.page < 1) throw new Error('Invalid page');
-    return [];
-  });
+  const result = await service.generateToken(userData.email);
 
-  await assert.rejects(
-    () => service.getUsersWithFirstPostAndLikes({ page: 1, limit: 0 }),
-    { message: 'Invalid limit' }
+  assert.ok(result.token);
+  assert.strictEqual(typeof result.token, 'string');
+  assert.strictEqual(result.userEmail, userData.email);
+  assert.strictEqual(repo.updateSessionVersion.mock.calls.length, 1);
+  assert.strictEqual(
+    repo.updateSessionVersion.mock.calls[0].arguments[0],
+    'user-id',
   );
 });
 
+void test('generateToken: throws if user not found', async () => {
+  const repo = makeMockRepo();
+  repo.findUserByEmail = mock.fn((_email: string) =>
+    Promise.resolve<MockUser | null>(null),
+  );
+  const service = buildService(repo);
+
+  await assert.rejects(() => service.generateToken('unknown@test.com'), {
+    message: 'User not found',
+  });
+  assert.strictEqual(repo.updateSessionVersion.mock.calls.length, 0);
+});
+
+void test('generateToken: increments sessionVersion by 1', async () => {
+  const repo = makeMockRepo();
+  repo.findUserByEmail = mock.fn((_email: string) =>
+    Promise.resolve<MockUser | null>({ ...existingUser, sessionVersion: 5 }),
+  );
+  const service = buildService(repo);
+
+  await service.generateToken(userData.email);
+
+  const newVersion = repo.updateSessionVersion.mock.calls[0].arguments[1];
+  assert.strictEqual(newVersion, 6);
+});
+
+void test('logout: updates session version and returns message', async () => {
+  const repo = makeMockRepo();
+  const service = buildService(repo);
+
+  const result = await service.logout('user-id');
+
+  assert.strictEqual(result.message, 'Logged out');
+  assert.strictEqual(repo.updateSessionVersion.mock.calls.length, 1);
+  assert.strictEqual(
+    repo.updateSessionVersion.mock.calls[0].arguments[0],
+    'user-id',
+  );
+});
+
+void test('logout: new sessionVersion is a number', async () => {
+  const repo = makeMockRepo();
+  const service = buildService(repo);
+
+  await service.logout('user-id');
+
+  const version = repo.updateSessionVersion.mock.calls[0].arguments[1];
+  assert.strictEqual(typeof version, 'number');
+});
+
+void test('updateUserProfile: returns updated name and lastname', async () => {
+  const repo = makeMockRepo();
+  repo.updateUser = mock.fn(
+    (_n: string, _l: string, _e: string, _b: Date, _a: string) =>
+      Promise.resolve<boolean>(true),
+  );
+  const service = buildService(repo);
+
+  const result = await service.updateUserProfile(
+    userData.email,
+    'NewName',
+    'NewLastname',
+    new Date('1990-01-01'),
+    'avatar.png',
+  );
+
+  assert.strictEqual(result.name, 'NewName');
+  assert.strictEqual(result.lastname, 'NewLastname');
+  assert.strictEqual(repo.updateUser.mock.calls.length, 1);
+  assert.strictEqual(repo.updateUser.mock.calls[0].arguments[0], 'NewName');
+  assert.strictEqual(
+    repo.updateUser.mock.calls[0].arguments[2],
+    userData.email,
+  );
+});
+
+void test('updateUserProfile: throws if updateUser returns false', async () => {
+  const repo = makeMockRepo();
+  repo.updateUser = mock.fn(
+    (_n: string, _l: string, _e: string, _b: Date, _a: string) =>
+      Promise.resolve<boolean>(false),
+  );
+  const service = buildService(repo);
+
+  await assert.rejects(
+    () => service.updateUserProfile(userData.email, 'X', 'Y', new Date(), ''),
+    { message: 'User not found' },
+  );
+});
+
+void test('showProfile: returns user profile as JSON', async () => {
+  const repo = makeMockRepo();
+  repo.findUserProfileByEmail = mock.fn((_email: string) =>
+    Promise.resolve<{ toJSON: () => MockUser } | null>({
+      toJSON: () => existingUser,
+    }),
+  );
+  const service = buildService(repo);
+
+  const result = await service.showProfile(userData.email);
+
+  assert.deepStrictEqual(result, existingUser);
+  assert.strictEqual(
+    repo.findUserProfileByEmail.mock.calls[0].arguments[0],
+    userData.email,
+  );
+});
+
+void test('showProfile: returns null if user not found', async () => {
+  const repo = makeMockRepo();
+  repo.findUserProfileByEmail = mock.fn((_email: string) =>
+    Promise.resolve<{ toJSON: () => MockUser } | null>(null),
+  );
+  const service = buildService(repo);
+
+  const result = await service.showProfile('nobody@test.com');
+
+  assert.strictEqual(result, null);
+});
+
+void test('deleteProfile: returns true on success', async () => {
+  const repo = makeMockRepo();
+  repo.deleteUser = mock.fn((_email: string) => Promise.resolve<number>(1));
+  const service = buildService(repo);
+
+  const result = await service.deleteProfile(userData.email);
+
+  assert.strictEqual(result, true);
+  assert.strictEqual(
+    repo.deleteUser.mock.calls[0].arguments[0],
+    userData.email,
+  );
+});
+
+void test('deleteProfile: throws if deleteUser returns -1', async () => {
+  const repo = makeMockRepo();
+  repo.deleteUser = mock.fn((_email: string) => Promise.resolve<number>(-1));
+  const service = buildService(repo);
+
+  await assert.rejects(() => service.deleteProfile('ghost@test.com'), {
+    message: 'User not found',
+  });
 });

@@ -1,34 +1,43 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { UserController } from './users/users.controller.js';
-import { PostsController } from './posts/posts.controller.js';
-import { UserService } from './users/users.service.js';
-import { PostsService } from './posts/posts.service.js';
-import { NotificationService } from './notifications/notifications.service.js';
-import { AuthGuard } from './auth/auth.service.js';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { PasswordHashGenerator } from './common/passwordHashGenerator.js';
-import { UsersRepository } from './users/users.repository.js';
-import { PostsRepository } from './posts/posts.repository.js';
+import { AuthModule } from './auth/auth.module';
+import { StripeModule } from './stripe/stripe.module';
+import { UsersModule } from './users/users.module';
+import { VinylsModule } from './vinyls/vinyls.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { LogsModule } from './logs/logs.module';
+import { LoggerModule } from './common/logger.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ErrorsInterceptor } from './common/interceptors/errors.interceptor';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     EventEmitterModule.forRoot(),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET,
+    JwtModule.registerAsync({
+      global: true,
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+      }),
+      inject: [ConfigService],
     }),
+    LoggerModule,
+    AuthModule,
+    UsersModule,
+    VinylsModule,
+    ReviewsModule,
+    LogsModule,
+    NotificationsModule,
+    StripeModule,
   ],
-  controllers: [UserController, PostsController],
   providers: [
-    UserService,
-    PostsService,
-    NotificationService,
-    AuthGuard,
-    PasswordHashGenerator,
-    UsersRepository,
-    PostsRepository,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ErrorsInterceptor,
+    },
   ],
 })
 export class AppModule {}

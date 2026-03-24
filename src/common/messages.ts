@@ -8,12 +8,12 @@ export const USERMESSAGES = {
   USER_NO_ACCESS: 'You don’t have access to this resource',
 } as const;
 
-export const POSTSMESSAGES = {
-  POST_CREATED: 'Post successfully created',
-  POST_UPDATED: 'Post successfully updated',
-  POST_DELETED: 'Post successfully deleted',
+export const VINYLSMESSAGES = {
+  VINYL_CREATED: 'Vinyl successfully created',
+  VINYL_UPDATED: 'Vinyl successfully updated',
+  VINYL_DELETED: 'Vinyl successfully deleted',
 
-  POST_NOT_FOUND: 'Post not found',
+  VINYL_NOT_FOUND: 'Vinyl not found',
 } as const;
 
 export const MESSAGES = {

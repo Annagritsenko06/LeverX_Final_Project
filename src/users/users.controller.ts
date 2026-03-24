@@ -6,19 +6,19 @@ import {
   Put,
   Req,
   UseGuards,
-  Query,
+  Delete,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { Request } from 'express';
-import { UserService } from './users.service.js';
+import { UserService } from './users.service';
 import { BadRequestException } from '@nestjs/common';
-import { NotificationService } from '../notifications/notifications.service.js';
-import { USERMESSAGES } from '../common/messages.js';
-import type { AuthRequest } from '../types/types.js';
-import { AuthGuard } from '../auth/auth.service.js';
-import { RegisterUserDto } from './dto/register-user.dto.js';
-import { LoginDto } from './dto/login.dto.js';
-import { UpdateProfileDto } from './dto/update-profile.dto.js';
+import { USERMESSAGES } from '../common/messages';
+import type { AuthRequest } from '../types/types';
+import { GoogleAuthGuard } from '../auth/guards/google-auth/google-auth.guard';
+import { AuthGuard } from '../auth/auth.guard';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { GoogleLoginResponseDto } from './dto/google-login-response.dto';
+import { RegisterAdminDto } from './dto/register-admin.dto';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -27,19 +27,32 @@ import {
 } from '@nestjs/swagger';
 
 @ApiTags('users')
+@ApiBearerAuth()
 @Controller('users')
 export class UserController {
   constructor(
     private readonly userService: UserService,
-    private readonly notification: NotificationService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  @Post()
-  @ApiOperation({ summary: 'Register new user' })
-  @ApiResponse({ status: 201, description: 'User registered' })
-  async register(@Body() userBody: RegisterUserDto) {
-    const result = await this.userService.registerUser(userBody);
+  @Delete('profile')
+  @ApiOperation({ summary: 'Delete user profile' })
+  @UseGuards(AuthGuard)
+  async deleteProfile(@Req() req: Request) {
+    const reqAuth = req as AuthRequest;
+    const email = reqAuth.user.email;
+    const success = await this.userService.deleteProfile(email);
+    return {
+      success: success,
+      message: 'Profile successfuly deleted',
+    };
+  }
+
+  @Post('admin')
+  @ApiOperation({ summary: 'Register admin' })
+  @ApiResponse({ status: 201, description: 'Admin registered' })
+  async registerAdmin(@Body() adminBody: RegisterAdminDto) {
+    const result = await this.userService.registerUser(adminBody);
     return {
       success: true,
       message: USERMESSAGES.USER_REGISTERED,
@@ -47,35 +60,70 @@ export class UserController {
     };
   }
 
-  @Post('login')
-  @ApiOperation({ summary: 'Login user' })
-  @ApiResponse({ status: 200, description: 'JWT token returned' })
-  async login(@Body() userBody: LoginDto) {
-    const { email, password } = userBody;
-    const result = await this.userService.loginUser(email, password);
-    return {
-      success: true,
-      token: result.token,
-      userEmail: result.userEmail,
-    };
+  @Post('logout')
+  @ApiOperation({ summary: 'Logout user' })
+  @ApiResponse({ status: 200, description: 'Successful logout!' })
+  @UseGuards(AuthGuard)
+  async logout(@Req() req: Request) {
+    const r = req as AuthRequest;
+    const userId = r.user.id;
+
+    await this.userService.logout(userId);
+
+    return { message: 'Logged out successfully' };
   }
 
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({
+    summary: 'Initiate Google login',
+    description: 'Redirects to Google OAuth page',
+  })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirect to Google OAuth',
+  })
+  @Get('google/login')
+  async googleLogin() {}
+
+  @UseGuards(GoogleAuthGuard)
+  @Get('google/callback')
+  @ApiOperation({
+    summary: 'Google OAuth callback',
+    description: 'Handles return from Google with token',
+  })
+  @ApiResponse({
+    status: 200,
+    type: GoogleLoginResponseDto,
+  })
+  async googleCallback(@Req() req: AuthRequest) {
+    const email = req.user.email;
+
+    const { token } = await this.userService.loginGoogleUser(email);
+
+    return {
+      success: true,
+      token: token,
+      userEmail: email,
+    };
+  }
   @Put('profile')
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
   async updateProfile(@Req() req: Request, @Body() userBody: UpdateProfileDto) {
-    const { name, lastname } = userBody;
-
-    if (!name || !lastname) {
-      throw new BadRequestException('Name and lastname are required');
+    const { name, lastname, avatar, birthdate } = userBody;
+    if (!name || !lastname || !avatar || !birthdate) {
+      throw new BadRequestException('All parametrs are required');
       return;
     }
 
     const authReq = req as AuthRequest;
+    const birthdateAsDate = new Date(birthdate);
     const result = await this.userService.updateUserProfile(
       authReq.user.email,
       name,
       lastname,
+      birthdateAsDate,
+      avatar,
     );
 
     this.eventEmitter.emit(
@@ -93,29 +141,17 @@ export class UserController {
     };
   }
 
-  @Get()
+  @Get('profile')
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
-  async getUsersWithFirstPostAndLikes(
-    @Query('page') page = '1',
-    @Query('limit') limit = '10',
-    @Query('sortBy') sortBy: 'name' | 'email' = 'name',
-    @Query('sortOrder') sortOrder: 'ASC' | 'DESC' = 'ASC',
-    @Query('name') name?: string,
-    @Query('email') email?: string,
-  ) {
-    const data = await this.userService.getUsersWithFirstPostAndLikes({
-      page: Number(page),
-      limit: Number(limit),
-      sortBy,
-      sortOrder,
-      name,
-      email,
-    });
+  async showProfile(@Req() req: AuthRequest) {
+    const email = req.user.email;
+
+    const userProfile = await this.userService.showProfile(email);
 
     return {
       success: true,
-      data,
+      profile: userProfile,
     };
   }
 }

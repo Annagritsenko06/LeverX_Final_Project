@@ -1,3 +1,5 @@
+export const STRIPE_CLIENT = 'STRIPE_CLIENT';
+
 export const HttpStatus = {
   OK: 200,
   CREATED: 201,

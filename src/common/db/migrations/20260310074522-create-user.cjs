@@ -9,17 +9,36 @@ module.exports = {
         allowNull: false,
         defaultValue: Sequelize.UUIDV4,
       },
+      roleId: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        defaultValue: 'user',
+      },
       name: {
         type: Sequelize.STRING,
       },
-      lastName: {
+      lastname: {
         type: Sequelize.STRING,
       },
       email: {
         type: Sequelize.STRING,
       },
-      password: {
+      googleSub: {
         type: Sequelize.STRING,
+      },
+      birthdate: {
+        type: Sequelize.DATE,
+        allowNull: true,
+        defaultValue: Sequelize.NOW,
+      },
+      avatar: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      sessionVersion: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        defaultValue: 0,
       },
     });
   },

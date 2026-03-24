@@ -1,12 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from './app.module.js';
-import { ErrorsInterceptor } from './common/interceptors/errors.interceptor.js';
+import { AppModule } from './app.module';
+import { sequelize } from './common/db/db';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
+  await sequelize
+    .authenticate()
+    .then(() => console.log(' DB connected'))
+    .catch((err: Error) => console.error(' DB connection error:', err));
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -15,11 +19,9 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalInterceptors(new ErrorsInterceptor());
-
   const config = new DocumentBuilder()
-    .setTitle('Posts API')
-    .setDescription('Users and posts API')
+    .setTitle('Vinyls API')
+    .setDescription('Users and vinyls API')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
@@ -27,6 +29,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  const configService = app.get(ConfigService);
+  await app.listen(configService.get<number>('PORT') ?? 3000);
 }
-bootstrap();
+void bootstrap();
