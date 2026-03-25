@@ -8,6 +8,7 @@ import {
   Param,
   Req,
   UseGuards,
+  ParseUUIDPipe,
   Query,
 } from '@nestjs/common';
 import { VinylsService } from './vinyls.service';
@@ -22,6 +23,7 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
+import { BadRequestException } from '@nestjs/common';
 import { Roles } from '../auth/guards/roles.decorators.js';
 import { RolesGuard } from '../auth/guards/role.guard.js';
 
@@ -171,7 +173,22 @@ export class VinylsController {
   @ApiOperation({ summary: 'Update vinyl' })
   async updateVinyl(
     @Req() req: Request,
-    @Param('vinylId') vinylId: string,
+    @Param(
+      'vinylId',
+      new ParseUUIDPipe({
+        version: '4',
+        errorHttpStatusCode: 400,
+        exceptionFactory: (_errors) => {
+          throw new BadRequestException({
+            message: 'Validation failed',
+            errors: {
+              vinylId: 'vinylId not valid',
+            },
+          });
+        },
+      }),
+    )
+    vinylId: string,
     @Body() vinylBody: UpdateVinylDto,
   ) {
     const result = await this.vinylsService.updateVinyl(vinylId, vinylBody);
@@ -192,7 +209,25 @@ export class VinylsController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(['admin'])
   @ApiOperation({ summary: 'Delete vinyl' })
-  async deleteVinyl(@Req() req: Request, @Param('vinylId') vinylId: string) {
+  async deleteVinyl(
+    @Req() req: Request,
+    @Param(
+      'vinylId',
+      new ParseUUIDPipe({
+        version: '4',
+        errorHttpStatusCode: 400,
+        exceptionFactory: (_errors) => {
+          throw new BadRequestException({
+            message: 'Validation failed',
+            errors: {
+              vinylId: 'vinylId not valid',
+            },
+          });
+        },
+      }),
+    )
+    vinylId: string,
+  ) {
     await this.vinylsService.deleteVinyl(vinylId);
 
     return {

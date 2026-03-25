@@ -8,6 +8,8 @@ import {
   Delete,
   Param,
   Query,
+  ParseUUIDPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -63,7 +65,24 @@ export class ReviewController {
   @ApiResponse({ status: 201, description: 'Review deleted' })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(['admin'])
-  async deleteReview(@Param('reviewId') reviewId: string) {
+  async deleteReview(
+    @Param(
+      'reviewId',
+      new ParseUUIDPipe({
+        version: '4',
+        errorHttpStatusCode: 400,
+        exceptionFactory: (_errors) => {
+          throw new BadRequestException({
+            message: 'Validation failed',
+            errors: {
+              vinylId: 'reviewId not valid',
+            },
+          });
+        },
+      }),
+    )
+    reviewId: string,
+  ) {
     const deletedCount = await this.reviewService.deleteReview(reviewId);
     return {
       deletedCount: deletedCount,
@@ -95,7 +114,22 @@ export class ReviewController {
   @ApiOperation({ summary: 'Get reviews of vinyl' })
   @ApiResponse({ status: 200 })
   async getReviewsOfVinyl(
-    @Param('vinylId') vinylId: string,
+    @Param(
+      'vinylId',
+      new ParseUUIDPipe({
+        version: '4',
+        errorHttpStatusCode: 400,
+        exceptionFactory: (_errors) => {
+          throw new BadRequestException({
+            message: 'Validation failed',
+            errors: {
+              vinylId: 'vinylId not valid',
+            },
+          });
+        },
+      }),
+    )
+    vinylId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
