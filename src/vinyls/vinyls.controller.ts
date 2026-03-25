@@ -20,6 +20,7 @@ import {
   ApiOperation,
   ApiTags,
   ApiQuery,
+  ApiParam,
 } from '@nestjs/swagger';
 import { Roles } from '../auth/guards/roles.decorators.js';
 import { RolesGuard } from '../auth/guards/role.guard.js';
@@ -159,7 +160,11 @@ export class VinylsController {
       vinyls: vinyls,
     };
   }
-
+  @ApiParam({
+    name: 'vinylId',
+    type: String,
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @Put(':vinylId')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(['admin'])
@@ -178,7 +183,11 @@ export class VinylsController {
       price: result.price,
     };
   }
-
+  @ApiParam({
+    name: 'vinylId',
+    type: String,
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @Delete(':vinylId')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(['admin'])

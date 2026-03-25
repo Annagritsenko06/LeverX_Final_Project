@@ -15,6 +15,7 @@ import {
   ApiResponse,
   ApiTags,
   ApiQuery,
+  ApiParam,
 } from '@nestjs/swagger';
 
 import type { AuthRequest } from '../types/types';
@@ -52,7 +53,11 @@ export class ReviewController {
       message: 'Review successfuly created',
     };
   }
-
+  @ApiParam({
+    name: 'reviewId',
+    type: String,
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @Delete(':reviewId')
   @ApiOperation({ summary: 'Delete review' })
   @ApiResponse({ status: 201, description: 'Review deleted' })
@@ -66,6 +71,11 @@ export class ReviewController {
     };
   }
 
+  @ApiParam({
+    name: 'vinylId',
+    type: String,
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @Get(':vinylId')
   @UseGuards(AuthGuard)
   @ApiQuery({
