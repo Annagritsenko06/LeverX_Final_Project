@@ -1,18 +1,29 @@
-require('dotenv').config();
+const { config } = require('dotenv');
+const path = require('path');
+
+config({ path: path.resolve(__dirname, '../../../.env') });
+
+const {
+  DB_USER,
+  DB_PASSWORD,
+  DB_NAME,
+  DB_HOST,
+  DB_PORT,
+  DB_SSL,
+} = process.env;
 
 module.exports = {
   production: {
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 5432,
+    username: DB_USER,
+    password: DB_PASSWORD,
+    database: DB_NAME,
+    host: DB_HOST,
+    port: parseInt(DB_PORT || '5432', 10),
     dialect: 'postgres',
     dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
-      },
+      ssl: DB_SSL === 'true'
+        ? { require: true, rejectUnauthorized: false }
+        : false,
     },
   },
 };
