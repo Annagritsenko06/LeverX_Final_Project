@@ -69,7 +69,13 @@ const makeVinyls = (): VinylWithUser[] => [
     price: 30,
     authorName: 'X',
     image: '',
-    User: { name: 'X' },
+    User: {
+      name: 'X',
+      id: '1',
+      lastname: 'XX',
+      email: 'x@example.com',
+      roleId: 'user',
+    },
   },
   {
     vinylId: 'v-2',
@@ -78,7 +84,13 @@ const makeVinyls = (): VinylWithUser[] => [
     price: 10,
     authorName: 'Y',
     image: '',
-    User: { name: 'Y' },
+    User: {
+      name: 'Y',
+      id: '2',
+      lastname: 'YY',
+      email: 'Y@example.com',
+      roleId: 'user',
+    },
   },
   {
     vinylId: 'v-3',
@@ -87,7 +99,13 @@ const makeVinyls = (): VinylWithUser[] => [
     price: 20,
     authorName: 'Z',
     image: '',
-    User: { name: 'Z' },
+    User: {
+      name: 'Z',
+      id: '3',
+      lastname: 'ZZ',
+      email: 'Z@example.com',
+      roleId: 'user',
+    },
   },
 ];
 
@@ -205,7 +223,13 @@ void test('filterVinyls: pagination page=2 limit=2 returns correct slice', async
         price: 10,
         authorName: 'X',
         image: '',
-        User: { name: 'X' },
+        User: {
+          name: 'X',
+          id: '1',
+          lastname: 'XX',
+          email: 'x@example.com',
+          roleId: 'user',
+        },
       },
       {
         vinylId: 'v-2',
@@ -214,7 +238,13 @@ void test('filterVinyls: pagination page=2 limit=2 returns correct slice', async
         price: 20,
         authorName: 'Y',
         image: '',
-        User: { name: 'Y' },
+        User: {
+          name: 'Y',
+          id: '2',
+          lastname: 'YY',
+          email: 'Y@example.com',
+          roleId: 'user',
+        },
       },
       {
         vinylId: 'v-3',
@@ -223,7 +253,13 @@ void test('filterVinyls: pagination page=2 limit=2 returns correct slice', async
         price: 30,
         authorName: 'Z',
         image: '',
-        User: { name: 'Z' },
+        User: {
+          name: 'Z',
+          id: '3',
+          lastname: 'ZZ',
+          email: 'Z@example.com',
+          roleId: 'user',
+        },
       },
       {
         vinylId: 'v-4',
@@ -232,7 +268,13 @@ void test('filterVinyls: pagination page=2 limit=2 returns correct slice', async
         price: 40,
         authorName: 'W',
         image: '',
-        User: { name: 'W' },
+        User: {
+          name: 'W',
+          id: '4',
+          lastname: 'WW',
+          email: 'W@example.com',
+          roleId: 'user',
+        },
       },
     ]),
   );
@@ -277,7 +319,13 @@ void test('getVinyls: happy path with pagination page=1 limit=2', async () => {
         price: 10,
         authorName: 'X',
         image: 'a.jpg',
-        User: { name: 'Artist A' },
+        User: {
+          name: 'Artist A',
+          id: '1',
+          lastname: 'ARTIST_A',
+          email: 'ARTIST_A@example.com',
+          roleId: 'user',
+        },
       },
       {
         vinylId: 'v-2',
@@ -286,7 +334,13 @@ void test('getVinyls: happy path with pagination page=1 limit=2', async () => {
         price: 20,
         authorName: 'Y',
         image: 'b.jpg',
-        User: { name: 'Artist B' },
+        User: {
+          name: 'Artist B',
+          id: '2',
+          lastname: 'ARTIST_B',
+          email: 'ARTIST_B@example.com',
+          roleId: 'user',
+        },
       },
       {
         vinylId: 'v-3',
@@ -295,7 +349,13 @@ void test('getVinyls: happy path with pagination page=1 limit=2', async () => {
         price: 30,
         authorName: 'Z',
         image: 'c.jpg',
-        User: { name: 'Artist C' },
+        User: {
+          name: 'Artist C',
+          id: '3',
+          lastname: 'ARTIST_C',
+          email: 'ARTIST_C@example.com',
+          roleId: 'user',
+        },
       },
     ]),
   );
@@ -371,7 +431,6 @@ void test('updateVinyl: happy path — returns updated vinyl', async () => {
   const service = buildService(repo);
 
   const result = await service.updateVinyl('vinyl-id', {
-    vinylId: 'v-1',
     name: 'New Name',
     description: 'New Desc',
     price: '50',
@@ -395,7 +454,6 @@ void test('updateVinyl: vinyl not found — throws error', async () => {
   await assert.rejects(
     () =>
       service.updateVinyl('wrong-id', {
-        vinylId: 'x',
         name: 'X',
         description: 'Y',
         price: '10',

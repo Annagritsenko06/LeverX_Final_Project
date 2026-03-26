@@ -2,6 +2,7 @@ import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { VinylsController } from '../src/vinyls/vinyls.controller';
 import type { VinylsService } from '../src/vinyls/vinyls.service';
+import { createRequest } from 'node-mocks-http';
 
 type MockVinylsService = {
   getVinyls: ReturnType<typeof mock.fn>;
@@ -149,9 +150,8 @@ void test('createVinyl: returns { success: true, name, price, authorName }', asy
   const service = makeMockVinylsService();
   const controller = buildController(service);
 
-  const req = { user: { id: 'admin-id' } } as Parameters<
-    typeof controller.createVinyl
-  >[0];
+  const req = createRequest<Request>();
+  req.user = { id: 'admin-id' };
   const body = {
     name: 'New Vinyl',
     description: 'Fresh',
@@ -173,9 +173,8 @@ void test('updateVinyl: returns { success: true, name, price }', async () => {
   const service = makeMockVinylsService();
   const controller = buildController(service);
 
-  const req = { user: { id: 'admin-id' } } as Parameters<
-    typeof controller.updateVinyl
-  >[0];
+  const req = createRequest<Request>();
+  req.user = { id: 'admin-id' };
   const body = {
     name: 'Updated Vinyl',
     description: 'Updated desc',
@@ -196,9 +195,8 @@ void test('deleteVinyl: returns { success: true, message }', async () => {
   const service = makeMockVinylsService();
   const controller = buildController(service);
 
-  const req = { user: { id: 'admin-id' } } as Parameters<
-    typeof controller.deleteVinyl
-  >[0];
+  const req = createRequest<Request>();
+  req.user = { id: 'admin-id' };
   const result = await controller.deleteVinyl(req, 'vinyl-1');
 
   assert.strictEqual(result.success, true);
@@ -213,9 +211,8 @@ void test('deleteVinyl: propagates error from service', async () => {
   );
   const controller = buildController(service);
 
-  const req = { user: { id: 'admin-id' } } as Parameters<
-    typeof controller.deleteVinyl
-  >[0];
+  const req = createRequest<Request>();
+  req.user = { id: 'admin-id' };
 
   await assert.rejects(() => controller.deleteVinyl(req, 'bad-id'), {
     message: 'Vinyl not found',
