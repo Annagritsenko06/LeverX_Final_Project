@@ -58,7 +58,10 @@ export class VinylsRepository {
       return null;
     }
 
-    const vinyl = await Vinyl.findOne({ where });
+    const vinyl = await Vinyl.findOne({
+      where,
+      attributes: { exclude: ['vinylId'] },
+    });
 
     if (!vinyl) return null;
     return vinyl.toJSON() as VinylType;
