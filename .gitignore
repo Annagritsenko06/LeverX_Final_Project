@@ -1,0 +1,16 @@
+/dist
+/build
+
+backups
+
+.env
+node_modules/
+
+Logs.json
+
+.env
+.husky
+backups
+Users_data.json
+Users_posts.json
+/dist
