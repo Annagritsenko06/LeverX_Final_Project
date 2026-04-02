@@ -99,9 +99,10 @@ export class VinylsRepository {
   ): Promise<{ purchasedAt: Date } | null> {
     const vinyl = await this.searchVinylByName(vinylName);
     if (!vinyl) return null;
-    const purchaseVinyl = await PurchasedVinyl.create({
-      userId,
-      vinylId: vinyl.vinylId,
+
+    const [purchaseVinyl] = await PurchasedVinyl.findOrCreate({
+      where: { userId, vinylId: vinyl.vinylId },
+      defaults: { userId, vinylId: vinyl.vinylId },
     });
     return { purchasedAt: purchaseVinyl.purchasedAt };
   }
