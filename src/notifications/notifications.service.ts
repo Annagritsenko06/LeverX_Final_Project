@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { OnEvent } from '@nestjs/event-emitter';
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 import { MESSAGES } from '../common/messages';
 
 @Injectable()
@@ -10,16 +11,16 @@ export class NotificationService {
   private transporter: Transporter;
 
   constructor(private readonly configService: ConfigService) {
-    this.transporter = nodemailer.createTransport({
+    const transportOptions: SMTPTransport.Options = {
       host: 'smtp.gmail.com',
       port: 587,
       secure: false,
-      family: 4,
       auth: {
         user: this.configService.get<string>('EMAIL_USER'),
         pass: this.configService.get<string>('EMAIL_PASS'),
       },
-    });
+    };
+    this.transporter = nodemailer.createTransport(transportOptions);
   }
 
   @OnEvent('profileUpdated')
