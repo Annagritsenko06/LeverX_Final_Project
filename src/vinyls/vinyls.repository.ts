@@ -60,7 +60,6 @@ export class VinylsRepository {
 
     const vinyl = await Vinyl.findOne({
       where,
-      attributes: { exclude: ['vinylId'] },
     });
 
     if (!vinyl) return null;
